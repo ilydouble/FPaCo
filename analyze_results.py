@@ -178,9 +178,9 @@ for dataset in datasets:
             print(f"Error reading {dpe_json}: {e}")
 
     # 4. CoOp Results
-    coop_dir = os.path.join(workspace, 'coop', 'results')
+    coop_dir = os.path.join(base_path, 'coop', 'results')
     if not os.path.exists(coop_dir):
-        coop_dir = os.path.join(workspace, 'coop', 'results_coop')
+        coop_dir = os.path.join(base_path, 'coop', 'results_coop')
         
     if os.path.exists(coop_dir):
         coop_json = os.path.join(coop_dir, f'results_{dataset}.json')

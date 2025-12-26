@@ -183,7 +183,6 @@ datasets/
 *.pt
 ASSIGNMENT.md
 项目总结.md
-结果.md
 build_classification_dataset.py
 build_yolo_dataset.py
 build_yolo_detection_dataset.py
