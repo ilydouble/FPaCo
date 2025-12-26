@@ -50,7 +50,7 @@ except ImportError as e:
 class GPaCoLoss(nn.Module):
     """Generalized PaCo Loss - No class frequency compensation in logits."""
     def __init__(self, alpha=1.0, beta=1.0, gamma=1.0, supt=1.0, temperature=0.2, 
-                 base_temperature=None, K=8192, num_classes=1000, smooth=0.0):
+                 base_temperature=None, K=8192, num_classes=1000, smooth=0.1):
         super(GPaCoLoss, self).__init__()
         self.temperature = temperature
         self.base_temperature = temperature if base_temperature is None else base_temperature
@@ -322,7 +322,8 @@ class Trainer:
             gamma=args.bpaco_gamma,
             temperature=args.moco_t,
             K=args.moco_k,
-            num_classes=self.num_classes
+            num_classes=self.num_classes,
+            smooth=args.smooth
         ).to(self.device)
         
         # BPaCoLoss for main training (with Balanced SCL + Logit Compensation)
@@ -377,9 +378,8 @@ class Trainer:
             
             # Delayed Balanced Loss: Use GPaCo during warmup, then switch to BPaCo
             if epoch <= self.args.warmup_epochs:
-                # Warmup phase: CE + GPaCo (no Logit Compensation, more stable)
-                gpaco_loss = self.criterion_gpaco(features, target_ext, logits)
-                total_loss = ce_loss + self.args.bpaco_weight * gpaco_loss
+                # Warmup phase: GPaCo only (matching GPaCo behavior - no separate CE loss)
+                total_loss = self.criterion_gpaco(features, target_ext, logits)
             else:
                 # Main training: CE + BPaCo (with Balanced SCL + Logit Compensation)
                 bpaco_loss = self.criterion_bpaco(features, target_ext, logits, center_logits)
@@ -428,7 +428,7 @@ class Trainer:
         for epoch in range(1, self.args.epochs + 1):
             # Log which loss is being used
             if epoch == 1:
-                print(f"Warmup phase: Using CE + GPaCo (no Logit Compensation) for epochs 1-{self.args.warmup_epochs}")
+                print(f"Warmup phase: Using GPaCo (no Logit Compensation) for epochs 1-{self.args.warmup_epochs}")
             elif epoch == self.args.warmup_epochs + 1:
                 print(f"Switching to CE + BPaCo (with Balanced SCL + Logit Compensation) from epoch {epoch}")
             
@@ -467,25 +467,26 @@ if __name__ == "__main__":
     parser.add_argument('--is-finger', action='store_true')
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--batch-size', type=int, default=32)
-    parser.add_argument('--lr', type=float, default=0.02)
-    parser.add_argument('--wd', type=float, default=5e-4)
+    parser.add_argument('--lr', type=float, default=0.01)  # aligned with GPaCo
+    parser.add_argument('--wd', type=float, default=1e-4)  # aligned with GPaCo
     parser.add_argument('--momentum', type=float, default=0.9)
     parser.add_argument('--backbone', default='resnet18')
     
     # MoCo / BPaCo params
     parser.add_argument('--moco-dim', default=128, type=int)
-    parser.add_argument('--moco-k', default=256, type=int)
+    parser.add_argument('--moco-k', default=8192, type=int)
     parser.add_argument('--moco-m', default=0.999, type=float)
     parser.add_argument('--moco-t', default=0.2, type=float)
     parser.add_argument('--mlp', action='store_true', default=True)
     
-    parser.add_argument('--alpha', default=1.0, type=float) # contrast weight among samples
+    parser.add_argument('--alpha', default=0.05, type=float) # contrast weight among samples (aligned with GPaCo)
     parser.add_argument('--beta', default=1.0, type=float)  # contrast weight between centers and samples
     parser.add_argument('--bpaco-gamma', default=1.0, type=float) # paco loss param
     parser.add_argument('--bpaco-weight', default=1.0, type=float) # Weight for BPaCo loss in total loss
     
-    parser.add_argument('--warmup-epochs', type=int, default=50, help='Number of epochs to use PaCo before switching to BPaCo')
+    parser.add_argument('--warmup-epochs', type=int, default=0, help='Number of epochs to use PaCo before switching to BPaCo')
     parser.add_argument('--image-size', type=int, default=448)
+    parser.add_argument('--smooth', type=float, default=0.1, help='Label smoothing (same as GPaCo)')
     parser.add_argument('--merge-train-val', action='store_true')
     
     args = parser.parse_args()

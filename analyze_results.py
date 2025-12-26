@@ -4,7 +4,7 @@ import pandas as pd
 
 methods = ['ce_loss', 'focal_loss', 'paco', 'gpaco', 'bpaco_original']
 datasets = ['aptos', 'finger', 'mias', 'octa', 'oral_cancer']
-base_path = '/Users/liruirui/Documents/code/study/finger'
+base_path = '/Users/liruirui/Documents/code/study/FPaCo'
 
 results_data = []
 
@@ -146,6 +146,57 @@ for dataset in datasets:
                     
         except Exception as e:
              print(f"Error reading {tip_txt}: {e}")
+
+# Add DPE results
+for dataset in datasets:
+    dpe_json = os.path.join(base_path, 'dpe', 'results', f'results_{dataset}.json')
+    if os.path.exists(dpe_json):
+        try:
+            with open(dpe_json, 'r') as f:
+                data = json.load(f)
+                # DPE json structure: {'dataset': '...', 'acc': ..., 'f1': ..., 'auc': ..., 'zs_acc':..., 'zs_f1':..., 'zs_auc':...}
+                
+                # Add DPE (TTA)
+                results_data.append({
+                    'Method': 'DPE',
+                    'Dataset': dataset,
+                    'Accuracy': data.get('acc', 'N/A'),
+                    'F1 Score': data.get('f1', 'N/A'),
+                    'AUC': data.get('auc', 'N/A')
+                })
+                
+                # Add DPE (Zero-Shot) if available
+                if 'zs_acc' in data:
+                    results_data.append({
+                        'Method': 'DPE (Zero-Shot)',
+                        'Dataset': dataset,
+                        'Accuracy': data.get('zs_acc', 'N/A'),
+                        'F1 Score': data.get('zs_f1', 'N/A'),
+                        'AUC': data.get('zs_auc', 'N/A')
+                    })
+        except Exception as e:
+            print(f"Error reading {dpe_json}: {e}")
+
+    # 4. CoOp Results
+    coop_dir = os.path.join(workspace, 'coop', 'results')
+    if not os.path.exists(coop_dir):
+        coop_dir = os.path.join(workspace, 'coop', 'results_coop')
+        
+    if os.path.exists(coop_dir):
+        coop_json = os.path.join(coop_dir, f'results_{dataset}.json')
+        if os.path.exists(coop_json):
+            try:
+                with open(coop_json, 'r') as f:
+                    data = json.load(f)
+                    results_data.append({
+                        'Method': 'CoOp',
+                        'Dataset': dataset,
+                        'Accuracy': data.get('acc', 'N/A'),
+                        'F1 Score': data.get('f1', 'N/A'),
+                        'AUC': data.get('auc', 'N/A')
+                    })
+            except Exception as e:
+                print(f"Error reading {coop_json}: {e}")
 
 # Create DataFrame
 df = pd.DataFrame(results_data)
