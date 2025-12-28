@@ -45,7 +45,8 @@ class MoCo(nn.Module):
 
         if mlp:  # hack: brute-force replacement
             dim_mlp = self.encoder_q.fc.weight.shape[1]
-            self.encoder_q.fc = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(inplace=True), nn.Linear(dim_mlp, dim_mlp), nn.ReLU(inplace=True), nn.Linear(dim_mlp, dim))
+            # GPaCo / MoCo v2 uses 2-layer MLP: Linear -> ReLU -> Linear
+            self.encoder_q.fc = nn.Sequential(nn.Linear(dim_mlp, dim_mlp), nn.ReLU(inplace=True), nn.Linear(dim_mlp, dim))
 
         # create the queue
         self.register_buffer("queue", torch.randn(K, dim))

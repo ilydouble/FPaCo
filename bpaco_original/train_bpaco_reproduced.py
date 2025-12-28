@@ -220,7 +220,7 @@ class ReproduceBPaCoDataset(Dataset):
                 # 1. RandAugment View
                 ra_params = dict(translate_const=int(image_size * 0.45), img_mean=tuple([min(255, round(255 * x)) for x in norm_mean]))
                 self.transform1 = T.Compose([
-                    T.RandomResizedCrop(image_size, scale=(0.2, 1.0)), # Scale from original BPaCo
+                    T.RandomResizedCrop(image_size, scale=(0.6, 1.0)), # Scale aligned with GPaCo (original was 0.2)
                     T.RandomHorizontalFlip(),
                     T.RandomApply([T.ColorJitter(0.4, 0.4, 0.4, 0.0)], p=1.0),
                     rand_augment_transform('rand-n2-m10-mstd0.5', ra_params), # n=2, m=10 default
@@ -230,7 +230,7 @@ class ReproduceBPaCoDataset(Dataset):
                 
                 # 2. SimCLR View (MoCo v2)
                 self.transform2 = T.Compose([
-                    T.RandomResizedCrop(image_size, scale=(0.2, 1.0)),
+                    T.RandomResizedCrop(image_size, scale=(0.6, 1.0)),
                     T.RandomApply([
                         T.ColorJitter(0.4, 0.4, 0.4, 0.1)
                     ], p=0.8),
@@ -379,7 +379,14 @@ class Trainer:
             # Delayed Balanced Loss: Use GPaCo during warmup, then switch to BPaCo
             if epoch <= self.args.warmup_epochs:
                 # Warmup phase: GPaCo only (matching GPaCo behavior - no separate CE loss)
-                total_loss = self.criterion_gpaco(features, target_ext, logits)
+                # Align with GPaCo: Asymmetric Loss (Only use Q, ignore K for loss)
+                # features from builder: [q (N), k (N), queue (K)]
+                # we want: [q (N), queue (K)]
+                features_asym = torch.cat([features[:bsz], features[2*bsz:]], dim=0)
+                target_asym = torch.cat([target_ext[:bsz], target_ext[2*bsz:]], dim=0)
+                logits_q = logits[:bsz]
+                
+                total_loss = self.criterion_gpaco(features_asym, target_asym, logits_q)
             else:
                 # Main training: CE + BPaCo (with Balanced SCL + Logit Compensation)
                 bpaco_loss = self.criterion_bpaco(features, target_ext, logits, center_logits)
