@@ -198,6 +198,24 @@ for dataset in datasets:
             except Exception as e:
                 print(f"Error reading {coop_json}: {e}")
 
+# 5. Heatmap BPaCo Results
+for dataset in datasets:
+    # Adjust path if different in actual run
+    heatmap_json = os.path.join(base_path, 'heat_classification_agent', 'results', dataset, 'results.json')
+    if os.path.exists(heatmap_json):
+        try:
+            with open(heatmap_json, 'r') as f:
+                data = json.load(f)
+                results_data.append({
+                    'Method': 'Heatmap BPaCo',
+                    'Dataset': dataset,
+                    'Accuracy': data.get('acc', 'N/A'),
+                    'F1 Score': data.get('f1', 'N/A'),
+                    'AUC': data.get('auc', 'N/A')
+                })
+        except Exception as e:
+            print(f"Error reading {heatmap_json}: {e}")
+
 # Create DataFrame
 df = pd.DataFrame(results_data)
 
@@ -210,18 +228,18 @@ for col in ['Accuracy', 'F1 Score', 'AUC']:
     df[col] = df[col].apply(lambda x: f"{x:.4f}" if isinstance(x, (int, float)) else x)
 
 print("## Comparison of Methods across Datasets")
-print(df.to_markdown(index=False))
+print(df.to_string(index=False))
 
 # Also try a pivoted view
 pivot_df = df.pivot(index='Dataset', columns='Method', values=['Accuracy', 'F1 Score', 'AUC'])
 # print("\n## Pivoted Comparison")
-# print(pivot_df.to_markdown()) 
+# print(pivot_df.to_string()) 
 
 for metric in ['Accuracy', 'F1 Score', 'AUC']:
     print(f"\n### {metric} Comparison")
     # For pivot to work with duplicate entries (if any error), we assume unique dataset-method pairs
     try:
         metric_pivot = df.pivot(index='Dataset', columns='Method', values=metric)
-        print(metric_pivot.to_markdown())
+        print(metric_pivot.to_string())
     except Exception as e:
         print(f"Could not pivot for {metric}: {e}")
