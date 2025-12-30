@@ -1,123 +1,284 @@
-# Efficient Test-Time Adaptation of Vision-Language Models
-[![Website](https://img.shields.io/badge/Project-Website-87CEEB)](https://kdiaaa.github.io/tda/)
-[![paper](https://img.shields.io/badge/arXiv-Paper-<COLOR>.svg)](http://arxiv.org/abs/2403.18293)
+# 🤚 YOLO11 Pose 手势关键点检测项目
 
-> [**Efficient Test-Time Adaptation of Vision-Language Models**](http://arxiv.org/abs/2403.18293)<br>
-> [Adilbek Karmanov](https://www.linkedin.com/in/adilbek-karmanov/), [Dayan Guan](https://dayan-guan.github.io/), [Shijian Lu](https://scholar.google.com/citations?hl=en&user=uYmK-A0AAAAJ&view=en), [Abdulmotaleb El Saddik](https://scholar.google.ca/citations?user=VcOjgngAAAAJ&hl=en), [Eric Xing](https://scholar.google.com/citations?user=5pKTRxEAAAAJ&hl=en)
+基于YOLO11的手势关键点检测数据集构建和训练工具。
 
-Official implementation of the paper: "Efficient Test-Time Adaptation of Vision-Language Models" [CVPR 2024].
+## 📋 项目概述
 
-## Overview
-![abstract figure](docs/main_figure.png)
-> **<p align="justify"> Abstract:** Test-time adaptation with pre-trained vision-language models has attracted increasing attention for tackling distribution shifts during the test time. Though prior studies have achieved very promising performance, they involve intensive computation which is severely unaligned with test-time adaptation. We design TDA, a training-free dynamic adapter that enables effective and efficient test-time adaptation with vision-language models. TDA works with a lightweight key-value cache that maintains a dynamic queue with few-shot pseudo labels as values and the corresponding test-sample features as keys. Leveraging the key-value cache, TDA allows adapting to test data gradually via progressive pseudo label refinement which is super-efficient without incurring any backpropagation. In addition, we introduce negative pseudo labeling that alleviates the adverse impact of pseudo label noises by assigning pseudo labels to certain negative classes when the model is uncertain about its pseudo label predictions. Extensive experiments over two benchmarks demonstrate TDA’s superior effectiveness and efficiency as compared with the state-of-the-art.
+本项目提供了一套完整的工具链，用于将LabelMe格式的手势关键点标注数据转换为YOLO11 Pose格式，并进行模型训练和预测。
 
-## Main Contributions
-In summary, the contributions of this work are threefold: </br>
+### 特性
 
-* **First**, we design a training-free dynamic adapter (TDA) that can achieve test-time adaptation of vision-language models efficiently and effectively. To the best of our knowledge, this is the first work that investigates the efficiency issue of test-time adaptation of vision-language models. </br>
-* **Second**, we introduce negative pseudo labeling to alleviate the adverse impact of pseudo label noises which makes TDA more robust to pseudo label noises and generalizable to testing data. </br>
-* **Third**, we evaluate TDA extensively over two benchmarks, and experiments show that TDA achieves superior accuracy and efficiency compared with the state-of-the-art. </br>
+- ✅ 自动转换LabelMe标注为YOLO格式
+- ✅ 智能数据集划分（训练/验证/测试）
+- ✅ 完整的训练脚本和配置
+- ✅ 预测和可视化工具
+- ✅ 数据集验证工具
+- ✅ 支持多种模型导出格式
 
-## Requirements 
-### Installation
-Follow these steps to set up a conda environment and ensure all necessary packages are installed:
+## 📊 数据集统计
+
+- **总样本数**: 2722
+- **训练集**: 1902 (70%)
+- **验证集**: 540 (20%)
+- **测试集**: 280 (10%)
+- **关键点数**: 3个/手势
+- **类别数**: 9个手势类别
+
+## 🚀 快速开始
+
+### 1. 环境准备
 
 ```bash
-git clone https://github.com/kdiAAA/TDA.git
-cd TDA
+# 安装依赖
+pip install ultralytics pyyaml opencv-python numpy
 
-conda create -n tda python=3.7
-conda activate tda
-
-# The results are produced with PyTorch 1.12.1 and CUDA 11.3
-conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
-
+# 或使用requirements.txt
 pip install -r requirements.txt
 ```
 
-### Dataset
-To set up all required datasets, kindly refer to the guidance in [DATASETS.md](docs/DATASETS.md), which incorporates steps for two benchmarks.
+### 2. 构建数据集
 
-## Run TDA
-### Configs
-The configuration for TDA hyperparameters in `configs/dataset.yaml` can be tailored within the provided file to meet the needs of various datasets. This customization includes settings for both the positive and negative caches as outlined below:
-* **Positive Cache Configuration:** Adjustments can be made to the `shot_capacity`, `alpha`, and `beta` values to optimize performance.
-
-* **Negative Cache Configuration:** Similar to the positive cache, the negative cache can also be fine-tuned by modifying the `shot_capacity`, `alpha`, `beta`, as well as the `entropy_threshold` and `mask_threshold` parameters.
-
-For ease of reference, the configurations provided aim to achieve optimal performance across datasets on two benchmarks, consistent with the results documented in our paper. However, specific tuning of these parameters for negative cache could potentially unlock further enhancements in performance. Adjusting parameters like `alpha` and `beta` within the positive cache lets you fine-tune things to match the unique needs of each dataset.
-
-### Running
-To execute the TDA, navigate to the `scripts` directory, where you'll find 4 bash scripts available. Each script is designed to apply the method to two benchmarks, utilizing either the ResNet50 or ViT/B-16 as the backbone architecture. The scripts process the datasets sequentially, as indicated by the order divided by '/' in the script. WandB logging is activated by default. If you wish to deactivate this feature, simply omit the `--wandb-log` argument. 
-
-Below are instructions for running TDA on both Out-of-Distribution (OOD) and Cross-Domain benchmarks using various backbone architectures. Follow the steps suited to your specific needs:"
-
-#### OOD Benchmark
-* **ResNet50**: Run TDA on the OOD Benchmark using the ResNet50 model:
-```
-bash ./scripts/run_ood_benchmark_rn50.sh 
-```
-* **ViT/B-16**: Run TDA on the OOD Benchmark using the ViT/B-16 model.
-```
-bash ./scripts/run_ood_benchmark_vit.sh 
+```bash
+python build_yolo_dataset.py
 ```
 
-#### Cross-Domain Benchmark
-* **ResNet50**: Run TDA on the Cross-Domain Benchmark using the ResNet50 model:
-```
-bash ./scripts/run_cd_benchmark_rn50.sh 
-```
-* **ViT/B-16**: Run TDA on the Cross-Domain Benchmark using the ViT/B-16 model.
-```
-bash ./scripts/run_cd_benchmark_vit.sh 
+这将创建 `yolo_hand_pose_dataset/` 目录，包含YOLO格式的训练数据。
+
+### 3. 验证数据集
+
+```bash
+python verify_dataset.py
 ```
 
+### 4. 训练模型
 
-### Results
-#### Comparisons in terms of efficiency and effectiveness on ImageNet
-| Method          | Testing Time | Accuracy | Gain   |
-|-----------------|:------------:|:--------:|:------:|
-| [CLIP-ResNet-50](https://arxiv.org/abs/2103.00020)  | **12min**    | 59.81    | 0      |
-| [TPT](https://arxiv.org/abs/2209.07511)            | 12h 50min    | 60.74    | +0.93  |
-| [DiffTPT](https://arxiv.org/abs/2308.06038)         | 34h 45min    | 60.80    | +0.99  |
-| **TDA (Ours)**  | **16min**    | **61.35**|**+1.54**|
+```bash
+```bash
+# 标准训练 (YOLO11s)
+python train_yolo_detection.py
 
-#### OOD Benchmark
-| Method            | ImageNet (IN)| IN-A | IN-V2 | IN-R | IN-S | Average | OOD Average |
-|-------------------|:--------:|:----------:|:-----------:|:----------:|:----------:|:-------:|:-----------:|
-| [CLIP-ResNet-50](https://arxiv.org/abs/2103.00020)    | 59.81    | 23.24      | 52.91       | 60.72      | 35.48      | 46.43   | 43.09       |
-| [CoOp](https://arxiv.org/abs/2109.01134)              | **63.33**| 23.06      | 55.40       | 56.60      | 34.67      | 46.61   | 42.43       |
-| [CoCoOp](https://arxiv.org/abs/2203.05557)            | 62.81    | 23.32      | 55.72       | 57.74      | 34.48      | 46.81   | 42.82       |
-| [Tip-Adapter](https://arxiv.org/abs/2111.03930)       | 62.03    | 23.13      | 53.97       | 60.35      | 35.74      | 47.04   | 43.30       |
-| [TPT](https://arxiv.org/abs/2209.07511)               | 60.74    | 26.67      | 54.70       | 59.11      | 35.09      | 47.26   | 43.89       |
-| [DiffTPT](https://arxiv.org/abs/2308.06038)            | 60.80    | **31.06**  | **55.80**   | 58.80      | 37.10      | 48.71   | 45.69       |
-| **TDA (Ours)**    | 61.35    | 30.29      | 55.54       | **62.58**  | **38.12**  | **49.58** | **46.63**  |
-
-#### Cross-Domain Benchmark
-| Method           | Aircraft | Caltech101 | Cars  | DTD   | EuroSAT | Flower102 | Food101 | Pets  | SUN397 | UCF101 | Average |
-|-----------------------|:-------:|:----------:|:-----:|:-----:|:-------:|:---------:|:-------:|:-----:|:------:|:------:|:-------:|
-| [CLIP-ResNet-50](https://arxiv.org/abs/2103.00020)        | 16.11    | 87.26      | 55.89 | 40.37 | 25.79   | 62.77     | 74.82   | 82.97 | 60.85  | 59.48  | 56.63   |
-| [CoOp](https://arxiv.org/abs/2109.01134)                  | 15.12    | 86.53      | 55.32 | 37.29 | 26.20   | 61.55     | 75.59   | 87.00 | 58.15  | 59.05  | 56.18   |
-| [CoCoOp](https://arxiv.org/abs/2203.05557)                | 14.61    | 87.38      | 56.22 | 38.53 | 28.73   | 65.57     | 76.20   | **88.39** | 59.61  | 57.10  | 57.23   |
-| [TPT](https://arxiv.org/abs/2209.07511)                   | 17.58    | 87.02      | 58.46 | 40.84 | 28.33   | 62.69     | 74.88   | 84.49 | 61.46  | 60.82  | 57.66   |
-| [DiffTPT](https://arxiv.org/abs/2308.06038)               | 17.60    | 86.89      | **60.71** | 40.72 | 41.04   | 63.53     | **79.21**   | 83.40 | **62.72**  | 62.67  | 59.85   |
-| **TDA (Ours)**                                            | **17.61**| **89.70**  | 57.78 | **43.74** | **42.11** | **68.74** | 77.75   | 86.18 | 62.53  | **64.18** | **61.03**  | 
-
-
-## Citation
-```bibtex
-@article{karmanov2024efficient,
-          title={Efficient Test-Time Adaptation of Vision-Language Models},
-          author={Karmanov, Adilbek and Guan, Dayan and Lu, Shijian and El Saddik, Abdulmotaleb and Xing, Eric},
-          journal={The IEEE/CVF Conference on Computer Vision and Pattern Recognition},
-          year={2024}
-  }
+# 改进版训练 (提高三角点召回率)
+# 使用YOLO11m + 优化增强参数
+python train_yolo_detection_improved.py
 ```
 
+### 5. 预测
 
+```bash
+# 单张图片
+python predict_and_visualize.py --model runs/pose/hand_pose_yolo11/weights/best.pt --source image.jpg
 
-## Contact
-If you have any questions, feel free to create an issue in this repository or contact us via email at adilbek.karmanov@mbzuai.ac.ae or dayan.guan@ntu.edu.sg.
+# 批量预测
+python predict_and_visualize.py --model runs/pose/hand_pose_yolo11/weights/best.pt --source images/ --batch
+```
 
-## Acknowledgements
-Our gratitude goes to the authors of [Tip-Adapter](https://github.com/gaopengcuhk/Tip-Adapter), [TPT](https://github.com/azshue/TPT), and [CoOp/CoCoOp](https://github.com/KaiyangZhou/CoOp) for sharing their work through open-source implementation and for providing detailed instructions on data preparation.
+## 📁 项目结构
+
+```
+.
+├── build_yolo_dataset.py          # 数据集构建脚本
+├── train_yolo_detection.py        # 训练脚本 (YOLO11s)
+├── train_yolo_detection_improved.py # 训练脚本 (改进版 - 提高召回率)
+├── predict_and_visualize.py       # 预测和可视化
+├── verify_dataset.py              # 数据集验证
+├── README.md                      # 本文件
+├── README_dataset.md              # 详细文档
+├── QUICKSTART.md                  # 快速开始指南
+├── 项目总结.md                    # 项目总结
+├── 25923打标文件/                 # 原始标注数据
+│   ├── 水/
+│   ├── 金/
+│   ├── 地/
+│   └── ...
+├── yolo_hand_pose_dataset/        # YOLO格式数据集
+│   ├── data.yaml
+│   ├── train/
+│   ├── val/
+│   └── test/
+└── runs/                          # 训练输出
+    └── pose/
+        └── hand_pose_yolo11/
+            └── weights/
+                ├── best.pt
+                └── last.pt
+```
+
+## 🎯 使用示例
+
+### Python API
+
+```python
+from ultralytics import YOLO
+
+# 训练
+model = YOLO('yolo11n-pose.pt')
+model.train(data='yolo_hand_pose_dataset/data.yaml', epochs=100)
+
+# 预测
+results = model.predict('image.jpg')
+
+# 获取关键点
+for result in results:
+    keypoints = result.keypoints.xy  # 关键点坐标
+    boxes = result.boxes.xyxy        # 边界框
+    confs = result.boxes.conf        # 置信度
+```
+
+### 命令行
+
+```bash
+# 训练
+yolo pose train data=yolo_hand_pose_dataset/data.yaml model=yolo11n-pose.pt epochs=100
+
+# 预测
+yolo pose predict model=runs/pose/hand_pose_yolo11/weights/best.pt source=image.jpg
+
+# 验证
+yolo pose val model=runs/pose/hand_pose_yolo11/weights/best.pt data=yolo_hand_pose_dataset/data.yaml
+```
+
+## 📚 文档
+
+- [README_dataset.md](README_dataset.md) - 详细的数据集说明和使用指南
+- [QUICKSTART.md](QUICKSTART.md) - 快速开始指南
+- [项目总结.md](项目总结.md) - 项目总结和技术细节
+
+## 🔧 配置参数
+
+### 数据集构建
+
+编辑 `build_yolo_dataset.py`:
+
+```python
+TRAIN_RATIO = 0.7           # 训练集比例
+VAL_RATIO = 0.2             # 验证集比例
+TEST_RATIO = 0.1            # 测试集比例
+SAMPLES_PER_CATEGORY = None # 每类样本数限制
+```
+
+### 训练参数
+
+编辑 `train_yolo_detection.py` 或直接传参:
+
+```python
+model.train(
+    data='yolo_hand_pose_dataset/data.yaml',
+    epochs=100,
+    imgsz=640,
+    batch=16,
+    lr0=0.01,
+    device=0,  # GPU ID
+)
+```
+
+## 🎨 可视化
+
+训练过程会自动生成:
+- 训练曲线 (`results.png`)
+- 混淆矩阵 (`confusion_matrix.png`)
+- 验证集预测示例 (`val_batch*.jpg`)
+
+## 📦 模型导出
+
+```python
+model = YOLO('runs/pose/hand_pose_yolo11/weights/best.pt')
+
+# ONNX
+model.export(format='onnx')
+
+# TorchScript
+model.export(format='torchscript')
+
+# CoreML (iOS)
+model.export(format='coreml')
+
+# TFLite (Android)
+model.export(format='tflite')
+```
+
+## 🔍 数据集验证结果
+
+```
+✓ 目录结构完整
+✓ 配置文件正确
+✓ 图片和标注数量匹配
+✓ 标注格式正确
+✓ 图片可读
+✓ 数值范围有效
+```
+
+## 💡 提示
+
+1. **GPU训练**: 确保安装了CUDA和对应版本的PyTorch
+2. **内存不足**: 减小 `batch` 参数或使用更小的模型
+3. **数据不平衡**: 使用 `SAMPLES_PER_CATEGORY` 限制每类样本数
+4. **提高准确率**: 增加训练轮数、使用更大的模型、调整数据增强
+
+## 📈 性能基准
+
+| 模型 | 大小 | mAP50 | 速度 (ms) | 推荐场景 |
+|------|------|-------|-----------|----------|
+| yolo11n-pose | 3.3M | - | ~2 | 实时应用 |
+| yolo11s-pose | 11.6M | - | ~3 | 平衡 |
+| yolo11m-pose | 26.4M | - | ~5 | 高准确率 |
+| yolo11l-pose | 58.9M | - | ~8 | 离线处理 |
+| yolo11x-pose | 78.9M | - | ~12 | 最高准确率 |
+
+*注: 实际性能需要在你的数据集上训练后测试*
+
+## 🤝 贡献
+
+欢迎提交Issue和Pull Request！
+
+## 📄 许可证
+
+MIT License
+
+## 🙏 致谢
+
+- [Ultralytics YOLO](https://github.com/ultralytics/ultralytics)
+- [LabelMe](https://github.com/wkentaro/labelme)
+
+---
+
+## 🧠 多模态分类 (B-PACO Heatmap Early Fusion)
+
+本项目还包含了一个高级的多模态分类模型，结合了关键点检测信息和原始图像，使用 B-PACO (Balanced Prototype and Contrastive Learning) 算法进行训练。
+
+### 核心思想
+- **Early Fusion (前融合)**: 将 YOLO 检测到的关键点转换为高斯热力图 (Heatmap)，作为图像的第三个通道 (Gray, Gray, Heatmap)。
+- **ResNet Backbone**: 直接利用 ImageNet 预训练的 ResNet 提取空间特征，无需复杂的 Transformer。
+- **统计特征融合**: 将显式的统计特征 (如 `is_left_hand`, `num_keypoints`) 在全连接层前融合。
+- **B-PACO Loss**: 结合对比学习损失 (Contrastive Loss) 和 交叉熵损失，解决长尾分布和类内差异大问题。
+
+### 训练
+
+```bash
+# 单次训练
+python multimodal_classification/train_bpaco_heatmap.py \
+    --dataset classification_dataset \
+    --keypoint-features keypoint_features.csv \
+    --backbone resnet18 \
+    --epochs 100 \
+    --output-dir results/bpaco_heatmap
+```
+
+### 自动调参 (Auto Tuning)
+
+使用提供的脚本自动搜索最佳超参数 (Sigma, LR, Beta):
+
+```bash
+bash multimodal_classification/run_heatmap_tuning.sh
+```
+
+结果将保存在 `results/bpaco_tuning/` 目录下。
+
+### 关键文件
+- `multimodal_classification/train_bpaco_heatmap.py`: 主训练脚本
+- `multimodal_classification/run_heatmap_tuning.sh`: 自动调参脚本
+- `keypoint_features.csv`: 预提取的关键点统计特征
+
+---
+
+**开始训练你的手势检测模型吧！** 🚀
+
