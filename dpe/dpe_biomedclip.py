@@ -212,27 +212,28 @@ def run_dpe(args, model, test_loader, clip_weights_init, device, train_loader=No
     num_classes = clip_weights.shape[1]
     
     # Initialize Cache with Training Data if provided
-    if train_loader is not None:
-        print(f"Initializing cache with training data (Capacity: {args.shot_capacity})...")
-        for images, target in tqdm(train_loader, desc="Init Cache"):
-            images = images.to(device)
-            target = target.to(device)
+    # 此处用训练数据做初始化作弊， 全部注释
+    # if train_loader is not None:
+    #     print(f"Initializing cache with training data (Capacity: {args.shot_capacity})...")
+    #     for images, target in tqdm(train_loader, desc="Init Cache"):
+    #         images = images.to(device)
+    #         target = target.to(device)
             
-            with torch.no_grad():
-                img_feats = model.encode_image(images)
-                img_feats /= img_feats.norm(dim=-1, keepdim=True)
+    #         with torch.no_grad():
+    #             img_feats = model.encode_image(images)
+    #             img_feats /= img_feats.norm(dim=-1, keepdim=True)
                 
-                # Assume GT label is correct, and entropy is 0 (or -inf to prioritize)
-                # We use a very small entropy so test data won't easily replace it
-                # unless we want test data to refine it?
-                # Usually support set is trusted.
-                entropy_val = -1e9 
+    #             # Assume GT label is correct, and entropy is 0 (or -inf to prioritize)
+    #             # We use a very small entropy so test data won't easily replace it
+    #             # unless we want test data to refine it?
+    #             # Usually support set is trusted.
+    #             entropy_val = -1e9 
                 
-                for idx in range(images.size(0)):
-                    p = target[idx].item() # Use GT label
-                    f = img_feats[idx].detach()
-                    # Add to cache
-                    update_cache(pos_cache, p, [f, entropy_val], args.shot_capacity, args.entropy_threshold)
+    #             for idx in range(images.size(0)):
+    #                 p = target[idx].item() # Use GT label
+    #                 f = img_feats[idx].detach()
+    #                 # Add to cache
+    #                 update_cache(pos_cache, p, [f, entropy_val], args.shot_capacity, args.entropy_threshold)
                     
     print(f"Starting TTA on {len(test_loader)} batches...")
     

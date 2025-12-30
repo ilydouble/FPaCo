@@ -7,8 +7,8 @@ DATASETS=("oral_cancer" "aptos" "finger" "mias" "octa")
 MODEL="hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224"
 WORKSPACE="../"
 OUTPUT_DIR="results"
-CAPACITY=128 # Increase capacity to hold more training samples (Few-Shot/Many-Shot)
-
+# CAPACITY=128 # Increase capacity to hold more training samples (Few-Shot/Many-Shot)
+CAPACITY=5 # 大 cache 并无意义
 mkdir -p $OUTPUT_DIR
 
 echo "Starting DPE BioMedCLIP SUPERVISED experiments (Train Cache, Capacity $CAPACITY)..."
@@ -30,7 +30,7 @@ for dataset in "${DATASETS[@]}"; do
     --shot-capacity $CAPACITY \
     --seed 1 \
     --prompts-file gpt3_prompts/prompts_simple.json \
-    --use-train-cache
+    # --use-train-cache
     
     echo "Finished $dataset"
     echo ""
