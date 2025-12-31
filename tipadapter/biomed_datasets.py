@@ -22,7 +22,7 @@ DATASET_CONFIGS = {
             'Drill', 'Light', 'Water', 'Fire', 'Wood', 'Earth', 'Ground', 
             'Mountain', 'Rock', 'Fire Light', 'Fire Wood', 'Fire Earth', 'Fire Drill'
         ],
-        'folder_name': 'fingerprint_classification_dataset'
+        'folder_name': 'fingerA'
     },
     'mias': {
         'classes': ['NORM', 'CALC', 'CIRC', 'SPIC', 'MISC', 'ARCH', 'ASYM'],

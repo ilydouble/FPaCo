@@ -213,3 +213,4 @@ source_mapping.json
 # 注意：根据你的项目类型，你可能需要调整或添加特定规则
 # 例如，对于前端项目，你可能想添加 /dist 等目录
 # 对于 Python 项目，venv/ 和 __pycache__/ 已经被包含
+build_finger_variants.py

@@ -4,7 +4,7 @@
 DATASETS=("oral_cancer" "aptos" "finger" "mias" "octa")
 
 # Common settings
-MODEL="hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_large_patch16_224"
+MODEL="hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224"
 WORKSPACE="../datasets"
 OUTPUT_DIR="results"
 SHOTS=16

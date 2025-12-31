@@ -1,16 +1,28 @@
+
 import json
 import os
 import pandas as pd
 
 methods = ['ce_loss', 'focal_loss', 'paco', 'gpaco', 'bpaco_original']
-datasets = ['aptos', 'finger', 'mias', 'octa', 'oral_cancer']
+# Updated datasets list including new variants
+datasets = ['aptos', 'fingerA', 'fingerB', 'fingerC', 'mias', 'octa', 'oral_cancer']
 base_path = '/Users/liruirui/Documents/code/study/FPaCo'
+output_file = 'results.md'
 
 results_data = []
 
+# 1. Base Methods
 for dataset in datasets:
+    # Map dataset name to folder name if needed
+    # Standard names: fingerA, fingerB, fingerC are top level folders or handled by script?
+    # The shell scripts output to "$RESULTS_ROOT/finger" or "fingerB"
+    # We need to map `dataset` to `result_folder_name`
+    
+    res_folder = dataset
+    if dataset == 'fingerA': res_folder = 'finger' # Original scripts mapped fingerA -> finger (based on user edit Step 671)
+    
     for method in methods:
-        json_path = os.path.join(base_path, method, 'results', dataset, 'history.json')
+        json_path = os.path.join(base_path, method, 'results', res_folder, 'history.json')
         
         metrics = {'Method': method, 'Dataset': dataset}
         
@@ -18,48 +30,42 @@ for dataset in datasets:
             try:
                 with open(json_path, 'r') as f:
                     history = json.load(f)
-                    
-                # Extract max values for interest metrics
-                # We assume the lists are of the same length and correspond to epochs.
-                # However, for a comparison table of "best results", taking the max of each valid metric is a common practice.
-                # Alternatively, we could pick the epoch with max F1 or max AUC. 
-                # Let's take the max of each individual metric for now to show potential.
                 
-                if 'acc' in history and history['acc']:
-                    metrics['Accuracy'] = max(history['acc'])
-                else:
-                    metrics['Accuracy'] = 'N/A'
+                # Taking Max
+                if 'acc' in history and history['acc']: metrics['Accuracy'] = max(history['acc'])
+                else: metrics['Accuracy'] = 'N/A'
                     
-                if 'f1' in history and history['f1']:
-                    metrics['F1 Score'] = max(history['f1'])
-                else:
-                     metrics['F1 Score'] = 'N/A'
+                if 'f1' in history and history['f1']: metrics['F1 Score'] = max(history['f1'])
+                else: metrics['F1 Score'] = 'N/A'
                 
-                if 'auc' in history and history['auc']:
-                    metrics['AUC'] = max(history['auc'])
-                else:
-                    metrics['AUC'] = 'N/A'
+                if 'auc' in history and history['auc']: metrics['AUC'] = max(history['auc'])
+                else: metrics['AUC'] = 'N/A'
                     
             except Exception as e:
                 print(f"Error reading {json_path}: {e}")
-                metrics['Accuracy'] = 'Error'
-                metrics['F1 Score'] = 'Error'
-                metrics['AUC'] = 'Error'
+                metrics.update({'Accuracy': 'Error', 'F1 Score': 'Error', 'AUC': 'Error'})
         else:
-            metrics['Accuracy'] = 'N/A'
-            metrics['F1 Score'] = 'N/A'
-            metrics['AUC'] = 'N/A'
+            metrics.update({'Accuracy': 'N/A', 'F1 Score': 'N/A', 'AUC': 'N/A'})
             
         results_data.append(metrics)
 
-# Add BioMedCLIP results
+# 2. BioMedCLIP
 for dataset in datasets:
+    # BioMedCLIP results might be named differently?
+    # biomedclip/results_dataset.json
+    # Assume file is results_fingerA.json? Or still results_finger.json?
+    # Let's check logic: usually logic maps 'finger' -> 'fingerprint'
+    
+    # We try exact name match first
     biomed_json = os.path.join(base_path, 'biomedclip', f'results_{dataset}.json')
+    # Fallback for fingerA if results_finger.json exists?
+    if not os.path.exists(biomed_json) and dataset == 'fingerA':
+         biomed_json = os.path.join(base_path, 'biomedclip', 'results_finger.json')
+
     if os.path.exists(biomed_json):
         try:
             with open(biomed_json, 'r') as f:
                 data = json.load(f)
-                # Ensure data is a list and take the first item as expected
                 if isinstance(data, list) and len(data) > 0:
                     entry = data[0]
                     results_data.append({
@@ -69,177 +75,112 @@ for dataset in datasets:
                         'F1 Score': entry.get('f1', 'N/A'),
                         'AUC': entry.get('auc', 'N/A')
                     })
-        except Exception as e:
-            print(f"Error reading {biomed_json}: {e}")
+        except Exception: pass
 
-# Add Tip-Adapter results
+# 3. Tip-Adapter
 for dataset in datasets:
+    # tipadapter/results/dataset_biomed_tipadapter.txt
     tip_txt = os.path.join(base_path, 'tipadapter', 'results', f'{dataset}_biomed_tipadapter.txt')
+    if not os.path.exists(tip_txt) and dataset == 'fingerA':
+        tip_txt = os.path.join(base_path, 'tipadapter', 'results', 'finger_biomed_tipadapter.txt')
+        
     if os.path.exists(tip_txt):
         try:
-            with open(tip_txt, 'r') as f:
-                lines = f.readlines()
+            with open(tip_txt, 'r') as f: lines = f.readlines()
             
-            # Temporary storage to group metrics by method
-            tip_results = {
-                'Tip-Adapter (Zero-Shot)': {'Accuracy': 'N/A', 'F1 Score': 'N/A', 'AUC': 'N/A'},
-                'Tip-Adapter (Training-Free)': {'Accuracy': 'N/A', 'F1 Score': 'N/A', 'AUC': 'N/A'},
-                'Tip-Adapter (Fine-Tuned)': {'Accuracy': 'N/A', 'F1 Score': 'N/A', 'AUC': 'N/A'}
-            }
+            # Parsing logic (simplified)
+            tip_res = {k: {'Accuracy': 'N/A', 'F1 Score': 'N/A', 'AUC': 'N/A'} 
+                       for k in ['Tip-Adapter (Zero-Shot)', 'Tip-Adapter (Training-Free)', 'Tip-Adapter (Fine-Tuned)']}
             
             for line in lines:
-                line = line.strip()
-                if not line: continue
+                if ':' not in line: continue
+                k, v = line.split(':', 1)
+                k = k.strip()
+                try: v = float(v.strip().rstrip('%'))/100.0 if '%' in v else float(v.strip())
+                except: v = 'N/A'
                 
-                parts = line.split(':')
-                if len(parts) < 2: continue
-                
-                key = parts[0].strip()
-                val_str = parts[1].strip()
-                
-                # Helper to parse value
-                def parse_val(s):
-                    if s.endswith('%'):
-                        return float(s.rstrip('%')) / 100.0
-                    try:
-                        return float(s)
-                    except:
-                        return 'N/A'
+                if 'Zero-Shot' in k: 
+                    m = 'Tip-Adapter (Zero-Shot)'
+                    if 'Acc' in k: tip_res[m]['Accuracy'] = v
+                    elif 'F1' in k: tip_res[m]['F1 Score'] = v
+                    elif 'AUC' in k: tip_res[m]['AUC'] = v
+                elif 'Tip-Adapter-F' in k:
+                    m = 'Tip-Adapter (Fine-Tuned)'
+                    if 'Acc' in k: tip_res[m]['Accuracy'] = v
+                    elif 'F1' in k: tip_res[m]['F1 Score'] = v
+                    elif 'AUC' in k: tip_res[m]['AUC'] = v
+                elif 'Tip-Adapter' in k: # Training-free default
+                    m = 'Tip-Adapter (Training-Free)'
+                    if 'Acc' in k: tip_res[m]['Accuracy'] = v
+                    elif 'F1' in k: tip_res[m]['F1 Score'] = v
+                    elif 'AUC' in k: tip_res[m]['AUC'] = v
 
-                val = parse_val(val_str)
-                
-                # Check key mapping
-                if key == 'Zero-Shot Acc':
-                    tip_results['Tip-Adapter (Zero-Shot)']['Accuracy'] = val
-                elif key == 'Zero-Shot F1':
-                    tip_results['Tip-Adapter (Zero-Shot)']['F1 Score'] = val
-                elif key == 'Zero-Shot AUC':
-                    tip_results['Tip-Adapter (Zero-Shot)']['AUC'] = val
-                    
-                elif key == 'Tip-Adapter Acc':
-                    tip_results['Tip-Adapter (Training-Free)']['Accuracy'] = val
-                elif key == 'Tip-Adapter F1':
-                    tip_results['Tip-Adapter (Training-Free)']['F1 Score'] = val
-                elif key == 'Tip-Adapter AUC':
-                    tip_results['Tip-Adapter (Training-Free)']['AUC'] = val
-                    
-                elif key == 'Tip-Adapter-F Acc':
-                    tip_results['Tip-Adapter (Fine-Tuned)']['Accuracy'] = val
-                elif key == 'Tip-Adapter-F F1':
-                    tip_results['Tip-Adapter (Fine-Tuned)']['F1 Score'] = val
-                elif key == 'Tip-Adapter-F AUC':
-                    tip_results['Tip-Adapter (Fine-Tuned)']['AUC'] = val
+            for m_name, m_vals in tip_res.items():
+                if m_vals['Accuracy'] != 'N/A':
+                    results_data.append({'Method': m_name, 'Dataset': dataset, **m_vals})
+        except Exception: pass
 
-            # Append to results_data
-            for method, metrics in tip_results.items():
-                # Only add if we have at least an Accuracy (meaning the method was run)
-                 # Or actually, we should add it if the file exists, as defaults are N/A.
-                 # Let's check if 'Accuracy' is not N/A just to be safe, or just add all since file exists
-                 if metrics['Accuracy'] != 'N/A':
-                    results_data.append({
-                        'Method': method,
-                        'Dataset': dataset,
-                        'Accuracy': metrics['Accuracy'],
-                        'F1 Score': metrics['F1 Score'],
-                        'AUC': metrics['AUC']
-                    })
-                    
-        except Exception as e:
-             print(f"Error reading {tip_txt}: {e}")
-
-# Add DPE results
+# 4. DPE
 for dataset in datasets:
     dpe_json = os.path.join(base_path, 'dpe', 'results', f'results_{dataset}.json')
+    if not os.path.exists(dpe_json) and dataset == 'fingerA':
+         dpe_json = os.path.join(base_path, 'dpe', 'results', 'results_finger.json')
+         
     if os.path.exists(dpe_json):
         try:
-            with open(dpe_json, 'r') as f:
-                data = json.load(f)
-                # DPE json structure: {'dataset': '...', 'acc': ..., 'f1': ..., 'auc': ..., 'zs_acc':..., 'zs_f1':..., 'zs_auc':...}
-                
-                # Add DPE (TTA)
-                results_data.append({
-                    'Method': 'DPE',
-                    'Dataset': dataset,
-                    'Accuracy': data.get('acc', 'N/A'),
-                    'F1 Score': data.get('f1', 'N/A'),
-                    'AUC': data.get('auc', 'N/A')
-                })
-                
-                # Add DPE (Zero-Shot) if available
-                if 'zs_acc' in data:
-                    results_data.append({
-                        'Method': 'DPE (Zero-Shot)',
-                        'Dataset': dataset,
-                        'Accuracy': data.get('zs_acc', 'N/A'),
-                        'F1 Score': data.get('zs_f1', 'N/A'),
-                        'AUC': data.get('zs_auc', 'N/A')
-                    })
-        except Exception as e:
-            print(f"Error reading {dpe_json}: {e}")
+            with open(dpe_json, 'r') as f: data = json.load(f)
+            results_data.append({
+                'Method': 'DPE', 'Dataset': dataset,
+                'Accuracy': data.get('acc', 'N/A'), 'F1 Score': data.get('f1', 'N/A'), 'AUC': data.get('auc', 'N/A')
+            })
+        except Exception: pass
 
-    # 4. CoOp Results
-    coop_dir = os.path.join(base_path, 'coop', 'results')
-    if not os.path.exists(coop_dir):
-        coop_dir = os.path.join(base_path, 'coop', 'results_coop')
-        
-    if os.path.exists(coop_dir):
-        coop_json = os.path.join(coop_dir, f'results_{dataset}.json')
-        if os.path.exists(coop_json):
-            try:
-                with open(coop_json, 'r') as f:
-                    data = json.load(f)
-                    results_data.append({
-                        'Method': 'CoOp',
-                        'Dataset': dataset,
-                        'Accuracy': data.get('acc', 'N/A'),
-                        'F1 Score': data.get('f1', 'N/A'),
-                        'AUC': data.get('auc', 'N/A')
-                    })
-            except Exception as e:
-                print(f"Error reading {coop_json}: {e}")
-
-# 5. Heatmap BPaCo Results
+# 5. CoOp
 for dataset in datasets:
-    # Adjust path if different in actual run
-    heatmap_json = os.path.join(base_path, 'heat_classification_agent', 'results', dataset, 'results.json')
-    if os.path.exists(heatmap_json):
+    coop_json = os.path.join(base_path, 'coop', 'results', f'results_{dataset}.json')
+    if not os.path.exists(coop_json) and dataset == 'fingerA':
+         coop_json = os.path.join(base_path, 'coop', 'results', 'results_finger.json')
+         
+    if os.path.exists(coop_json):
         try:
-            with open(heatmap_json, 'r') as f:
-                data = json.load(f)
-                results_data.append({
-                    'Method': 'Heatmap BPaCo',
-                    'Dataset': dataset,
-                    'Accuracy': data.get('acc', 'N/A'),
-                    'F1 Score': data.get('f1', 'N/A'),
-                    'AUC': data.get('auc', 'N/A')
-                })
-        except Exception as e:
-            print(f"Error reading {heatmap_json}: {e}")
+            with open(coop_json, 'r') as f: data = json.load(f)
+            results_data.append({
+                'Method': 'CoOp', 'Dataset': dataset,
+                'Accuracy': data.get('acc', 'N/A'), 'F1 Score': data.get('f1', 'N/A'), 'AUC': data.get('auc', 'N/A')
+            })
+        except Exception: pass
 
-# Create DataFrame
+# Process Output
 df = pd.DataFrame(results_data)
+if not df.empty:
+    # Formatting
+    df['Dataset'] = pd.Categorical(df['Dataset'], categories=datasets, ordered=True)
+    df = df.sort_values(['Dataset', 'Method'])
+    for col in ['Accuracy', 'F1 Score', 'AUC']:
+        df[col] = df[col].apply(lambda x: f"{x:.4f}" if isinstance(x, (int, float)) else x)
 
-# Sort for better readability
-df['Dataset'] = pd.Categorical(df['Dataset'], categories=datasets, ordered=True)
-df = df.sort_values(['Dataset', 'Method'])
+    # Write Markdown
+    with open(output_file, 'w') as f:
+        f.write("# Experiment Results Summary\n\n")
+        f.write("## Overall Comparison\n\n")
+        
+        # Use pandas to_markdown if available, else manual
+        try:
+            f.write(df.to_markdown(index=False))
+        except ImportError:
+            # Simple fallback
+            f.write(df.to_string(index=False))
+            
+        f.write("\n\n## Metric-Specific Comparisons\n")
+        for metric in ['Accuracy', 'F1 Score', 'AUC']:
+            f.write(f"\n### {metric}\n\n")
+            try:
+                pivoted = df.pivot(index='Dataset', columns='Method', values=metric)
+                f.write(pivoted.to_markdown())
+            except:
+                f.write("Could not generate pivot table.")
+            f.write("\n")
 
-# Format values to 4 decimal places
-for col in ['Accuracy', 'F1 Score', 'AUC']:
-    df[col] = df[col].apply(lambda x: f"{x:.4f}" if isinstance(x, (int, float)) else x)
-
-print("## Comparison of Methods across Datasets")
-print(df.to_string(index=False))
-
-# Also try a pivoted view
-pivot_df = df.pivot(index='Dataset', columns='Method', values=['Accuracy', 'F1 Score', 'AUC'])
-# print("\n## Pivoted Comparison")
-# print(pivot_df.to_string()) 
-
-for metric in ['Accuracy', 'F1 Score', 'AUC']:
-    print(f"\n### {metric} Comparison")
-    # For pivot to work with duplicate entries (if any error), we assume unique dataset-method pairs
-    try:
-        metric_pivot = df.pivot(index='Dataset', columns='Method', values=metric)
-        print(metric_pivot.to_string())
-    except Exception as e:
-        print(f"Could not pivot for {metric}: {e}")
+    print(f"Results saved to {output_file}")
+else:
+    print("No results found.")

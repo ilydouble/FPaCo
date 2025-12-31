@@ -281,18 +281,18 @@ def main():
     # 2. Dataset
     # Handle mapping
     dataset_mapping = {
-        'finger': 'fingerprint',
-        'oral_cancer': 'oral_cancer',
-        'aptos': 'aptos',
-        'mias': 'mias',
-        'octa': 'octa'
+        'finger': 'fingerA',
+        'oral_cancer': 'oral_cancer_classification_dataset',
+        'aptos': 'aptos_classification_dataset',
+        'mias': 'mias_classification_dataset',
+        'octa': 'octa_classification_dataset'
     }
     
     ds_name = dataset_mapping.get(args.dataset, args.dataset)
     
     # Structure: dataset/train, dataset/test
     # Check for _classification_dataset suffix
-    dataset_dir = os.path.join(args.data_root, f"{ds_name}_classification_dataset")
+    dataset_dir = os.path.join(args.data_root, f"{ds_name}")
     if not os.path.exists(dataset_dir):
          # Try bare name
          dataset_dir = os.path.join(args.data_root, ds_name)
@@ -461,7 +461,7 @@ def get_arguments():
     parser.add_argument('--ctx-init', type=str, default="")
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--shots', type=int, default=16)
-    parser.add_argument('--prompts-file', type=str, default='prompts/unified_prompts.json')
+    parser.add_argument('--prompts-file', type=str, default='../prompts/unified_prompts.json')
     
     args = parser.parse_args()
     return args
