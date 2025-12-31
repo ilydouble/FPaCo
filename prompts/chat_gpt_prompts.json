@@ -38,51 +38,50 @@
     },
     "finger": {
         "0": [
-            "Fingerprint pattern of type Stone (WrI or Incomplete Peacock). Visual pattern looks like an incomplete peacock feather.",
-            "Incomplete Peacock Whorl (WrI): Has 1 inner delta and 1 outer delta, but the inner delta may be incomplete.",
-            "Fingerprint with peacock-like pattern but incomplete inner features (Stone type).",
-            "Dermatoglyphics: Stone pattern (WrI), resembling a peacock feather that hasn't fully formed."
+            "Fingerprint pattern of type Mountain (Ae or Elevated Arch). Visual pattern looks like a raised hill.",
+            "Elevated Arch (Ae): Bottom ridges form an arc enclosing a triangular or circular shape.",
+            "Mountain type fingerprint: Arch with a prominent raised area or enclosed block at the base.",
+            "Dermatoglyphics: Complex arch pattern with elevations."
         ],
         "1": [
-            "Fingerprint pattern of type Gold (Wt or Concentric Whorl). Visual pattern looks like a target or bullseye.",
-            "Concentric Whorl (Wt): Central ridges form complete concentric circles around the center.",
-            "Gold type fingerprint: Within the innermost 3 circles, there is at least one complete closed and independent loop.",
-            "Dermatoglyphics: Whorl pattern with concentric circular ridges forming a target shape."
+            "Fingerprint pattern of type Fire Earth (Composite of Radial Loop and Simple Arch).",
+            "Fingerprint showing combined features of Fire (Radial Loop) and Earth (Simple Arch) patterns.",
+            "Combined pattern: Radial flow mixed with simple arched ridges."
         ],
         "2": [
-            "Fingerprint pattern of type Dream (Lf or Falling Loop). Visual pattern is a U-shape flowing out with convergence at the top.",
-            "Falling Loop (Lf): Has 1 outer delta and a convergence point at the top of the U-shape.",
-            "Dream type fingerprint: At the top of the U-shape, 4 or more ridges converge forming an acute angle and do not flow out.",
-            "Dermatoglyphics: Falling Loop pattern with ridges forming a sharp wedge at the top."
+            "Fingerprint pattern of type Earth (As or Simple Arch). Visual pattern looks like a flat mound or bow.",
+            "Simple Arch (As): Smooth arched ridges flowing from one side to the other without deltas.",
+            "Earth type fingerprint: Simple, flat arch with no complexity or sharp peaks.",
+            "Dermatoglyphics: The simplest arch pattern with gentle waves."
         ],
         "3": [
-            "Fingerprint pattern of type Electricity (Wc or Composite Whorl). Visual pattern looks like a Tai-Chi shape.",
-            "Composite Whorl (Wc): Central ridges form a complete S-line.",
-            "Electricity type fingerprint: S-line structure with ridges on both sides flowing INTO deltas.",
-            "Dermatoglyphics: Composite/Tai-Chi pattern with an S-shaped core and two deltas."
-        ],
-        "4": [
             "Fingerprint pattern of type Wind (At or Tented Arch). Visual pattern has ridges rising high with a tent-like peak.",
             "Tented Arch (At): Ridges rise sharply in the center forming a tent-like peak.",
             "Wind type fingerprint: High arch with a sharp peak in the center.",
             "Dermatoglyphics: Arch pattern with a significant spike or tent-like feature in the middle."
         ],
+        "4": [
+            "Fingerprint pattern of type Ground (Aul or Ulnar Loop Arch). Visual pattern looks like a horseshoe but with 0 deltas.",
+            "Ulnar Loop Arch (Aul): Overall ridges vary form a U-shape towards the little finger but lack a delta.",
+            "Ground type fingerprint: Resembles Ulnar Loop but is technically an Arch due to missing delta.",
+            "Dermatoglyphics: Hybrid arch-loop pattern classified as Arch."
+        ],
         "5": [
-            "Fingerprint pattern of type Electricity with Wind (Composite of Tai-Chi and Tented Arch).",
-            "Fingerprint showing features of both Electricity (Composite Whorl) and Wind (Tented Arch) patterns.",
-            "Combined pattern: Tai-Chi S-line structure mixed with a sharp tented arch peak."
+            "Fingerprint pattern of type Dream (Lf or Falling Loop). Visual pattern is a U-shape flowing out with convergence at the top.",
+            "Falling Loop (Lf): Has 1 outer delta and a convergence point at the top of the U-shape.",
+            "Dream type fingerprint: At the top of the U-shape, 4 or more ridges converge forming an acute angle and do not flow out.",
+            "Dermatoglyphics: Falling Loop pattern with ridges forming a sharp wedge at the top."
         ],
         "6": [
-            "Fingerprint pattern of type Drill (Wd or Double Loop Whorl). Visual pattern looks like a flattened Tai-Chi shape.",
-            "Double Loop Whorl (Wd): Central ridges form a complete S-line where ridges flow OUT OF deltas.",
-            "Drill type fingerprint: S-line structure distinguishing it from Composite Whorl by ridge flow direction.",
-            "Dermatoglyphics: Two distinct loop formations twisting together like a drill."
+            "Fingerprint pattern of type Fire (Lr or Radial Loop). Visual pattern looks like a horseshoe flowing towards the thumb.",
+            "Radial Loop (Lr): Ridges form a U-shape opening towards the thumb side with 1 outer delta.",
+            "Fire type fingerprint: Loop pattern flowing in the radial (thumb) direction.",
+            "Dermatoglyphics: Radial Loop, less common than Ulnar Loop."
         ],
         "7": [
-            "Fingerprint pattern of type Light (We or Press Whorl). Visual pattern looks like a football or olive shape.",
-            "Press Whorl (We): Central ridges form an elongated spiral.",
-            "Light type fingerprint: Within the central 3 circles, the length is at least 2.5 times the width.",
-            "Dermatoglyphics: Elongated whorl pattern resembling a pressed circle or olive."
+            "Fingerprint pattern of type Fire Light (Composite of Radial Loop and Press Whorl).",
+            "Fingerprint showing combined features of Fire (Radial Loop) and Light (Press Whorl) patterns.",
+            "Combined pattern: Radial flow mixed with an elongated, olive-shaped whorl."
         ],
         "8": [
             "Fingerprint pattern of type Water (Lu or Ulnar Loop). Visual pattern looks like a horseshoe flowing towards the little finger.",
@@ -91,60 +90,56 @@
             "Dermatoglyphics: Ulnar Loop, the most common fingerprint pattern."
         ],
         "9": [
-            "Fingerprint pattern of type Fire (Lr or Radial Loop). Visual pattern looks like a horseshoe flowing towards the thumb.",
-            "Radial Loop (Lr): Ridges form a U-shape opening towards the thumb side with 1 outer delta.",
-            "Fire type fingerprint: Loop pattern flowing in the radial (thumb) direction.",
-            "Dermatoglyphics: Radial Loop, less common than Ulnar Loop."
+            "Fingerprint pattern of type Electricity (Wc or Composite Whorl). Visual pattern looks like a Tai-Chi shape.",
+            "Composite Whorl (Wc): Central ridges form a complete S-line.",
+            "Electricity type fingerprint: S-line structure with ridges on both sides flowing INTO deltas.",
+            "Dermatoglyphics: Composite/Tai-Chi pattern with an S-shaped core and two deltas."
         ],
         "10": [
-            "Fingerprint pattern of type Wood (Ws or Spiral Whorl). Visual pattern looks like a spiral.",
-            "Spiral Whorl (Ws): Central ridges form a spiral pattern around the center.",
-            "Wood type fingerprint: Within the central 3 circles, the length is less than 2 times the width.",
-            "Dermatoglyphics: Whorl pattern with ridges spiraling out from the core."
+            "Fingerprint pattern of type Drill (Wd or Double Loop Whorl). Visual pattern looks like a flattened Tai-Chi shape.",
+            "Double Loop Whorl (Wd): Central ridges form a complete S-line where ridges flow OUT OF deltas.",
+            "Drill type fingerprint: S-line structure distinguishing it from Composite Whorl by ridge flow direction.",
+            "Dermatoglyphics: Two distinct loop formations twisting together like a drill."
         ],
         "11": [
-            "Fingerprint pattern of type Earth (As or Simple Arch). Visual pattern looks like a flat mound or bow.",
-            "Simple Arch (As): Smooth arched ridges flowing from one side to the other without deltas.",
-            "Earth type fingerprint: Simple, flat arch with no complexity or sharp peaks.",
-            "Dermatoglyphics: The simplest arch pattern with gentle waves."
+            "Fingerprint pattern of type Light (We or Press Whorl). Visual pattern looks like a football or olive shape.",
+            "Press Whorl (We): Central ridges form an elongated spiral.",
+            "Light type fingerprint: Within the central 3 circles, the length is at least 2.5 times the width.",
+            "Dermatoglyphics: Elongated whorl pattern resembling a pressed circle or olive."
         ],
         "12": [
-            "Fingerprint pattern of type Ground (Aul or Ulnar Loop Arch). Visual pattern looks like a horseshoe but with 0 deltas.",
-            "Ulnar Loop Arch (Aul): Overall ridges vary form a U-shape towards the little finger but lack a delta.",
-            "Ground type fingerprint: Resembles Ulnar Loop but is technically an Arch due to missing delta.",
-            "Dermatoglyphics: Hybrid arch-loop pattern classified as Arch."
+            "Fingerprint pattern of type Electricity with Wind (Composite of Tai-Chi and Tented Arch).",
+            "Fingerprint showing features of both Electricity (Composite Whorl) and Wind (Tented Arch) patterns.",
+            "Combined pattern: Tai-Chi S-line structure mixed with a sharp tented arch peak."
         ],
         "13": [
-            "Fingerprint pattern of type Mountain (Ae or Elevated Arch). Visual pattern looks like a raised hill.",
-            "Elevated Arch (Ae): Bottom ridges form an arc enclosing a triangular or circular shape.",
-            "Mountain type fingerprint: Arch with a prominent raised area or enclosed block at the base.",
-            "Dermatoglyphics: Complex arch pattern with elevations."
-        ],
-        "14": [
             "Fingerprint pattern of type Rock (Wp or Peacock Whorl). Visual pattern looks like a peacock feather.",
             "Peacock Whorl (Wp): Has 1 inner delta and 1 outer delta with symmetrical ridge convergence.",
             "Rock type fingerprint: Ridges on both sides converge symmetrically or cross each other.",
             "Dermatoglyphics: Distinctive peacock eye pattern with two deltas."
         ],
-        "15": [
-            "Fingerprint pattern of type Fire Light (Composite of Radial Loop and Press Whorl).",
-            "Fingerprint showing combined features of Fire (Radial Loop) and Light (Press Whorl) patterns.",
-            "Combined pattern: Radial flow mixed with an elongated, olive-shaped whorl."
+        "14": [
+            "Fingerprint pattern of type Stone (WrI or Incomplete Peacock). Visual pattern looks like an incomplete peacock feather.",
+            "Incomplete Peacock Whorl (WrI): Has 1 inner delta and 1 outer delta, but the inner delta may be incomplete.",
+            "Fingerprint with peacock-like pattern but incomplete inner features (Stone type).",
+            "Dermatoglyphics: Stone pattern (WrI), resembling a peacock feather that hasn't fully formed."
         ],
-        "16": [
+        "15": [
             "Fingerprint pattern of type Fire Wood (Composite of Radial Loop and Spiral Whorl).",
             "Fingerprint showing combined features of Fire (Radial Loop) and Wood (Spiral Whorl) patterns.",
             "Combined pattern: Radial flow mixed with a spiral whorl."
         ],
-        "17": [
-            "Fingerprint pattern of type Fire Earth (Composite of Radial Loop and Simple Arch).",
-            "Fingerprint showing combined features of Fire (Radial Loop) and Earth (Simple Arch) patterns.",
-            "Combined pattern: Radial flow mixed with simple arched ridges."
+        "16": [
+            "Fingerprint pattern of type Wood (Ws or Spiral Whorl). Visual pattern looks like a spiral.",
+            "Spiral Whorl (Ws): Central ridges form a spiral pattern around the center.",
+            "Wood type fingerprint: Within the central 3 circles, the length is less than 2 times the width.",
+            "Dermatoglyphics: Whorl pattern with ridges spiraling out from the core."
         ],
-        "18": [
-            "Fingerprint pattern of type Fire Drill (Composite of Radial Loop and Double Loop Whorl).",
-            "Fingerprint showing combined features of Fire (Radial Loop) and Drill (Double Loop) patterns.",
-            "Combined pattern: Radial flow mixed with twisted double loop structures."
+        "17": [
+            "Fingerprint pattern of type Gold (Wt or Concentric Whorl). Visual pattern looks like a target or bullseye.",
+            "Concentric Whorl (Wt): Central ridges form complete concentric circles around the center.",
+            "Gold type fingerprint: Within the innermost 3 circles, there is at least one complete closed and independent loop.",
+            "Dermatoglyphics: Whorl pattern with concentric circular ridges forming a target shape."
         ]
     },
     "mias": {
