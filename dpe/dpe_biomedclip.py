@@ -37,7 +37,7 @@ def get_arguments():
     
     parser.add_argument('--seed', type=int, default=1)
     
-    parser.add_argument('--prompts-file', type=str, default='gpt3_prompts/prompts_simple.json', help='Path to prompts json file')
+    parser.add_argument('--prompts-file', type=str, default='../prompts/unified_prompts.json', help='Path to prompts json file')
     parser.add_argument('--entropy-threshold', type=float, default=None, help='Entropy threshold for cache update')
     parser.add_argument('--use-train-cache', action='store_true', help='Use training data to initialize positive cache')
     

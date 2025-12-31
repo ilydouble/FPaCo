@@ -1,4 +1,3 @@
-
 import os
 import argparse
 import json
@@ -20,48 +19,16 @@ except ImportError:
 
 DATASET_CONFIGS = {
     'oral_cancer': {
-        'classes': ['Normal', 'Oral Cancer'],
-        'prompts': [
-            'histopathology image of normal oral tissue',
-            'histopathology image of oral squamous cell carcinoma',
-        ]
+        'classes': ['Normal', 'Oral Cancer']
     },
     'aptos': {
-        'classes': ['No DR', 'Mild', 'Moderate', 'Severe', 'Proliferative'],
-        'prompts': [
-            'fundus image with no diabetic retinopathy',
-            'fundus image with mild diabetic retinopathy',
-            'fundus image with moderate diabetic retinopathy',
-            'fundus image with severe diabetic retinopathy',
-            'fundus image with proliferative diabetic retinopathy',
-        ]
+        'classes': ['No DR', 'Mild', 'Moderate', 'Severe', 'Proliferative']
     },
     'finger': {
         'classes': [
             'Stone', 'Gold', 'Dream', 'Electricity', 'Wind', 'Electricity with Wind', 
             'Drill', 'Light', 'Water', 'Fire', 'Wood', 'Earth', 'Ground', 
             'Mountain', 'Rock', 'Fire Light', 'Fire Wood', 'Fire Earth', 'Fire Drill'
-        ],
-        'prompts': [
-            'fingerprint pattern of type Stone',
-            'fingerprint pattern of type Gold',
-            'fingerprint pattern of type Dream',
-            'fingerprint pattern of type Electricity',
-            'fingerprint pattern of type Wind',
-            'fingerprint pattern of type Electricity with Wind',
-            'fingerprint pattern of type Drill',
-            'fingerprint pattern of type Light',
-            'fingerprint pattern of type Water',
-            'fingerprint pattern of type Fire',
-            'fingerprint pattern of type Wood',
-            'fingerprint pattern of type Earth',
-            'fingerprint pattern of type Ground',
-            'fingerprint pattern of type Mountain',
-            'fingerprint pattern of type Rock',
-            'fingerprint pattern of type Fire Light',
-            'fingerprint pattern of type Fire Wood',
-            'fingerprint pattern of type Fire Earth',
-            'fingerprint pattern of type Fire Drill',
         ]
     },
     'mias': {
@@ -69,36 +36,42 @@ DATASET_CONFIGS = {
         # Ordering is unknown, assuming alphabetical or standard numeric.
         # This is high risk of being wrong order.
         # Let's use a generic 7-class prompt and hope for alignment or just test.
-        'classes': ['CALC', 'CIRC', 'SPIC', 'MISC', 'ARCH', 'ASYM', 'NORM'],
-        'prompts': [
-            'mammogram showing calcification',
-            'mammogram showing circumscribed masses',
-            'mammogram showing spiculated masses',
-            'mammogram showing ill-defined masses', # MISC
-            'mammogram showing architectural distortion',
-            'mammogram showing asymmetry',
-            'normal mammogram',
-        ]
+        'classes': ['CALC', 'CIRC', 'SPIC', 'MISC', 'ARCH', 'ASYM', 'NORM']
     },
     'octa': {
         # Assuming Common OCTA 7 classes: AMD, CNV, DR, ERM, Normal, OHT, RVO
-        'classes': ['AMD', 'CNV', 'DR', 'ERM', 'Normal', 'OHT', 'RVO'],
-        'prompts': [
-            'OCTA image of Age-related Macular Degeneration',
-            'OCTA image of Choroidal Neovascularization',
-            'OCTA image of Diabetic Retinopathy',
-            'OCTA image of Epiretinal Membrane',
-            'Normal OCTA image',
-            'OCTA image of Ocular Hypertension',
-            'OCTA image of Retinal Vein Occlusion',
-        ]
+        'classes': ['AMD', 'CNV', 'DR', 'ERM', 'Normal', 'OHT', 'RVO']
     }
 }
 
-def load_biomedclip(device, model_name, cache_dir):
+def load_prompts_from_json(json_path, dataset_name):
+    """Load prompts from the unified JSON file."""
+    if not os.path.exists(json_path):
+        raise FileNotFoundError(f"Prompts file not found: {json_path}")
+        
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+        
+    if dataset_name not in data:
+        raise ValueError(f"Dataset {dataset_name} not found in {json_path}")
+        
+    class_prompts_map = data[dataset_name]
+    # Keys are strings "0", "1", etc. Sort them numerically to ensure order
+    sorted_keys = sorted(class_prompts_map.keys(), key=lambda x: int(x))
+    
+    prompts_list = []
+    for k in sorted_keys:
+        # Return the full list of prompts for ensemble
+        p_list = class_prompts_map[k]
+        if isinstance(p_list, list):
+            prompts_list.append(p_list) 
+        else:
+             prompts_list.append([str(p_list)])
+             
+    return prompts_list
+
+def load_biomedclip(device, model_name, cache_dir=None):
     print(f"Loading BioMedCLIP model: {model_name}...")
-    os.makedirs(cache_dir, exist_ok=True)
-    print(f"Using cache directory: {cache_dir}")
     # open_clip.create_model_and_transforms automatically handles downloading from HF Hub if model_name starts with 'hf-hub:'
     # The cache_dir arg allows specifying where to save/load the model.
     model, preprocess_train, preprocess_val = open_clip.create_model_and_transforms(
@@ -110,7 +83,7 @@ def load_biomedclip(device, model_name, cache_dir):
     model.eval()
     return model, preprocess_val, tokenizer
 
-def run_dataset(model, preprocess, tokenizer, dataset_name, dataset_path, device):
+def run_dataset(model, preprocess, tokenizer, dataset_name, dataset_path, device, prompts_file):
     print(f"\nProcessing {dataset_name} at {dataset_path}...")
     
     config = DATASET_CONFIGS.get(dataset_name)
@@ -118,14 +91,28 @@ def run_dataset(model, preprocess, tokenizer, dataset_name, dataset_path, device
         print(f"Unknown dataset config for {dataset_name}")
         return
     
-    # Encode prompts
-    print("Encoding prompts...")
-    prompts = config['prompts']
-    text_tokens = tokenizer(prompts).to(device)
-    
+    # Load prompts from JSON
+    try:
+        class_prompts = load_prompts_from_json(prompts_file, dataset_name)
+        print(f"Loaded prompts for {len(class_prompts)} classes from {prompts_file}")
+    except Exception as e:
+        print(f"Error loading prompts: {e}")
+        return
+
+    # Encode prompts (Ensemble)
+    print("Encoding prompts (Ensemble)...")
+    class_embeddings = []
     with torch.no_grad():
-        text_features = model.encode_text(text_tokens)
-        text_features /= text_features.norm(dim=-1, keepdim=True)
+        for prompts in class_prompts:
+            text_tokens = tokenizer(prompts).to(device)
+            embeddings = model.encode_text(text_tokens)
+            embeddings /= embeddings.norm(dim=-1, keepdim=True)
+            # Mean pooling for ensemble
+            mean_embedding = embeddings.mean(dim=0)
+            mean_embedding /= mean_embedding.norm()
+            class_embeddings.append(mean_embedding)
+            
+    text_features = torch.stack(class_embeddings, dim=0).to(device) # [C, D]
 
     # Load images
     image_paths = []
@@ -173,10 +160,10 @@ def run_dataset(model, preprocess, tokenizer, dataset_name, dataset_path, device
         with torch.no_grad():
             image_features = model.encode_image(image_input)
             image_features /= image_features.norm(dim=-1, keepdim=True)
-            logit_scale = model.logit_scale.exp()
+            
             # Similarity
-            similarity = (logit_scale * image_features @ text_features.T).softmax(dim=-1)
-
+            similarity = (100.0 * image_features @ text_features.T).softmax(dim=-1)
+            
             p, predicted = similarity.max(dim=1)
             preds.extend(predicted.cpu().numpy())
             probs.extend(similarity.cpu().numpy())
@@ -214,16 +201,12 @@ def main():
     parser.add_argument('--dataset', default='all', choices=['all', 'oral_cancer', 'aptos', 'finger', 'mias', 'octa'], help='Specific dataset to run')
     parser.add_argument('--model', default='hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224', help='BioMedCLIP model name (e.g. hf-hub:ZiyueWang/med-clip for 448 resolution)')
     parser.add_argument('--cache-dir', default=None, help='Directory to cache the downloaded model')
+    parser.add_argument('--prompts-file', default='prompts/unified_prompts.json', help='Path to unified prompts json file relative to workspace')
     args = parser.parse_args()
-    if args.cache_dir is None:
-        current_script_dir = os.path.dirname(os.path.abspath(__file__))
-        args.cache_dir = os.path.join(current_script_dir, "hf_cache")
-    print(f"Using cache directory: {args.cache_dir}")   
+    
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model, preprocess, tokenizer = load_biomedclip(device, args.model, args.cache_dir)
-
-
-
+    
     datasets_map = {
         'oral_cancer': 'oral_cancer_classification_dataset',
         'aptos': 'aptos_classification_dataset',
@@ -250,7 +233,18 @@ def main():
             print(f"Skipping {name}: path {dataset_path} not found")
             continue
             
-        res = run_dataset(model, preprocess, tokenizer, name, dataset_path, device)
+        # Resolve prompts file path
+        # Assume args.prompts_file is relative to workspace or absolute
+        prompts_path = os.path.join(args.workspace, args.prompts_file)
+        if not os.path.exists(prompts_path):
+             # Try relative to script
+             prompts_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), args.prompts_file)
+        
+        # Fixed path fallback for robustness if workspace arg is just '../'
+        if not os.path.exists(prompts_path):
+             prompts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../prompts/unified_prompts.json'))
+
+        res = run_dataset(model, preprocess, tokenizer, name, dataset_path, device, prompts_path)
         if res:
             results.append(res)
             
