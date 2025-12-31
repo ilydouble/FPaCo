@@ -171,10 +171,10 @@ def run_dataset(model, preprocess, tokenizer, dataset_name, dataset_path, device
         with torch.no_grad():
             image_features = model.encode_image(image_input)
             image_features /= image_features.norm(dim=-1, keepdim=True)
-            
+            logit_scale = model.logit_scale.exp()
             # Similarity
-            similarity = (100.0 * image_features @ text_features.T).softmax(dim=-1)
-            
+            similarity = (logit_scale * image_features @ text_features.T).softmax(dim=-1)
+
             p, predicted = similarity.max(dim=1)
             preds.extend(predicted.cpu().numpy())
             probs.extend(similarity.cpu().numpy())
