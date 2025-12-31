@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 BPaCo (Balanced Prototype and Contrastive Learning) - RGB + Heatmap Early Fusion Version
-Modified for offline heatmap integration.
+Modified for offline heatmap integration. Can also run in RGB-only mode with --no-heatmap.
 
-Input: [R, G, B, Heatmap] (4 Channels)
+Input: [R, G, B, Heatmap] (4 Channels) OR [R, G, B] (3 Channels)
 """
 
 import os
@@ -36,7 +36,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 try:
-    from heatmap_utils import generate_gaussian_heatmap
+    from heatmap_utils import generate_gaussian_heatmap, parse_detections_from_json
+    from heat_augmentation import YOLOAugmentation
 except ImportError:
     # Inline fallback if import fails
     def generate_gaussian_heatmap(h, w, boxes, scores=None, sigma=15):
@@ -52,6 +53,15 @@ except ImportError:
             blob = np.exp(-dist_sq / (2 * sigma**2))
             heatmap = np.maximum(heatmap, blob * score)
         return heatmap
+
+    def parse_detections_from_json(data):
+         # Minimal fallback for train_agent standalone
+         boxes = []
+         if 'detections' in data:
+              for det in data['detections']:
+                  boxes.append(det['bbox'])
+         return np.array(boxes), None
+
 
 # Set Seed
 def set_seed(seed=42):
@@ -71,13 +81,16 @@ set_seed(42)
 class HeatmapBPaCoDataset(Dataset):
     """
     Input: RGB Image + JSON Detections
-    Output: 4-Channel Tensor [R, G, B, Heatmap]
+    Output:
+      If use_heatmap=True: 4-Channel Tensor [R, G, B, Heatmap]
+      If use_heatmap=False: 3-Channel Tensor [R, G, B]
     """
-    def __init__(self, dataset_dir, split='train', image_size=224, sigma=30, combine_train_val=False):
+    def __init__(self, dataset_dir, split='train', image_size=224, sigma=30, combine_train_val=False, use_heatmap=True):
         self.dataset_dir = Path(dataset_dir)
         self.split = split
         self.image_size = image_size
         self.sigma = sigma
+        self.use_heatmap = use_heatmap
         
         self.samples = []
         
@@ -119,12 +132,79 @@ class HeatmapBPaCoDataset(Dataset):
                     if img_path.suffix.lower() in ['.png', '.jpg', '.jpeg', '.bmp']:
                         self.samples.append((str(img_path), class_idx))
 
-        print(f"[{split}] Loaded {len(self.samples)} samples. Classes: {len(self.classes)}")
+        print(f"[{split}] Loaded {len(self.samples)} samples. Classes: {len(self.classes)}. Heatmap enabled: {self.use_heatmap}")
         
         self.normalize = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        self.yolo_aug = YOLOAugmentation()
+        
+        # Determine if we should skip geometric transforms (for 'finger' datasets)
+        self.skip_geometric = 'finger' in str(self.dataset_dir).lower()
+        if self.skip_geometric:
+            print(f"[{split}] 'finger' detected in dataset path. Geometric transforms (flip/rotate) will be SKIPPED.")
 
     def __len__(self):
         return len(self.samples)
+
+    def _apply_augmentations(self, pil_img, heatmap_np):
+        """
+        Apply augmentation to a single sample.
+        Geometric transforms applied to both img and heat.
+        Photometric transforms applied only to img.
+        """
+        # Convert to Tensor for joint geometric transforms
+        img_tensor = TF.to_tensor(pil_img) # 0-1
+        
+        if self.use_heatmap: # 4 channels
+            heat_tensor = torch.from_numpy(heatmap_np).unsqueeze(0) # [1, H, W]
+            tensor_to_aug = torch.cat([img_tensor, heat_tensor], dim=0) # [4, H, W]
+        else: # 3 channels
+            tensor_to_aug = img_tensor # [3, H, W]
+
+        # 1. Base Resize
+        tensor_to_aug = TF.resize(tensor_to_aug, [self.image_size, self.image_size], antialias=True)
+
+        if self.split == 'train':
+            # 2. Geometric Transforms (Joint)
+            if not self.skip_geometric:
+                if random.random() < 0.5:
+                    tensor_to_aug = TF.hflip(tensor_to_aug)
+                
+                if random.random() < 0.5:
+                    angle = random.uniform(-15, 15)
+                    tensor_to_aug = TF.rotate(tensor_to_aug, angle)
+
+            # Split back for photometric
+            if self.use_heatmap:
+                img_aug = TF.to_pil_image(tensor_to_aug[:3, :, :])
+                heat_aug = tensor_to_aug[3, :, :].unsqueeze(0)
+            else:
+                img_aug = TF.to_pil_image(tensor_to_aug)
+                heat_aug = None
+
+            # 3. Photometric Transforms (RGB only)
+            # Apply Strong YOLO-style augmentation to all
+            img_aug = self.yolo_aug.hsv_augment(img_aug)
+            img_aug = self.yolo_aug.gaussian_blur(img_aug, p=0.2, kernel_size=5)
+            img_aug = self.yolo_aug.add_noise(img_aug, p=0.15)
+            
+            final_img = TF.to_tensor(img_aug)
+            final_heat = heat_aug
+        else:
+            if self.use_heatmap:
+                final_img = tensor_to_aug[:3, :, :]
+                final_heat = tensor_to_aug[3, :, :].unsqueeze(0)
+            else:
+                final_img = tensor_to_aug
+                final_heat = None
+
+        # Final tensor
+        if self.use_heatmap:
+            res = torch.cat([final_img, final_heat], dim=0)
+            res[:3] = self.normalize(res[:3])
+        else:
+            res = self.normalize(final_img)
+            
+        return res
 
     def __getitem__(self, idx):
         img_path, label = self.samples[idx]
@@ -140,108 +220,40 @@ class HeatmapBPaCoDataset(Dataset):
             print(f"Error loading {img_path}: {e}")
             return self.__getitem__(random.randint(0, len(self)-1))
 
-        # 2. Load JSON & Generate Heatmap
-        json_path = Path(img_path).with_suffix('.json')
-        boxes = []
-        if json_path.exists():
-            try:
-                with open(json_path, 'r') as f:
-                    data = json.load(f)
-                
-                # Logic to parse whatever format exists
-                if 'detections' in data:
-                    for det in data['detections']:
-                        boxes.append(det['bbox'])
-                elif 'annotations' in data:
-                     for ann in data['annotations']:
-                         if 'x' in ann and 'y' in ann and 'radius' in ann:
-                             r = ann['radius']
-                             boxes.append([ann['x']-r, ann['y']-r, ann['x']+r, ann['y']+r])
-            except:
-                pass
-        
-        boxes = np.array(boxes) if len(boxes) > 0 else np.zeros((0, 4))
-        heatmap = generate_gaussian_heatmap(h, w, boxes, sigma=self.sigma) # [H, W] float
-        
-        # 3. Stack to 4 Channels (Using Numpy -> PIL-like workflow)
-        # Standard PIL doesn't support 4 channels easily with custom semantics (RGBA is specific).
-        # We will handle transforms manually or treat as numpy.
-        
-        # Convert Image to Numpy
-        img_np = np.array(pil_img) # [H, W, 3]
-        
-        # Normalize heatmap to 0-1 (it already is approx, but ensure)
-        if heatmap.max() > 0:
-            heatmap = heatmap / heatmap.max()
+        heatmap = None
+        if self.use_heatmap:
+            # 2. Load JSON & Generate Heatmap
+            json_path = Path(img_path).with_suffix('.json')
+            boxes = []
+            scores = None
             
-        heat_np = heatmap[:, :, np.newaxis] # [H, W, 1]
+            if json_path.exists():
+                try:
+                    with open(json_path, 'r') as f:
+                        data = json.load(f)
+                    boxes, scores = parse_detections_from_json(data)
+                except Exception as e:
+                    # print(f"Error parse {json_path}: {e}")
+                    pass
+            
+            if len(boxes) == 0:
+                 boxes = np.zeros((0, 4))
+            
+            heatmap = generate_gaussian_heatmap(h, w, boxes, scores=scores, sigma=self.sigma)
+            
+            if heatmap.max() > 0:
+                heatmap = heatmap / heatmap.max()
         
-        # Concatenate: [H, W, 4]
-        # We perform geometric augmentation (Resize, Flip, Rotate) on this 4-channel block
-        # To use torchvision transforms, we can convert to Tensor [4, H, W]
-        
-        tensor_4c = torch.from_numpy(np.concatenate([img_np, heat_np], axis=2)).permute(2, 0, 1).float() # [4, H, W]
-        # RGB is 0-255, Heatmap is 0-1.
-        # We should scale RGB to 0-1 for consistency before transforms if we rely on ToTensor-like behavior,
-        # but ToTensor usually divides by 255.
-        # Let's divide RGB by 255 manually.
-        tensor_4c[:3, :, :] /= 255.0
-        
-        # 4. Augmentation
+        # 3. Apply Augmentation (All are normal samples now)
+        v1 = self._apply_augmentations(pil_img, heatmap)
         if self.split == 'train':
-            # Resize
-            tensor_4c = TF.resize(tensor_4c, [self.image_size, self.image_size], antialias=True)
-            
-            # Random Horizontal Flip
-            if random.random() < 0.5:
-                tensor_4c = TF.hflip(tensor_4c)
-                
-            # Random Rotation
-            if random.random() < 0.5:
-                angle = random.uniform(-15, 15)
-                tensor_4c = TF.rotate(tensor_4c, angle)
-                
-            # For Contrastive Learning, we need Two Views (v1, v2).
-            # Usually strict contrastive learning does independent augmentations.
-            # Here, we have constructed one augmented view (tensor_4c).
-            # Let's generate a second one by applying ANOTHER set of augmentations on the original?
-            # Or simpler: Apply photometric noise differently?
-            # For this implementation, let's create v1 and v2 from the SAME geometrically transformed tensor
-            # but maybe different random crops or just duplicate for now to verify pipeline.
-            # Ideally: We should have started from raw and branched.
-            # Refactoring to allow branching:
-            
-            # Let's simplify: Standard BPaCo uses Strong/Weak or Two Views.
-            # We will return v1 = tensor_4c, v2 = tensor_4c (Copy) 
-            # Ideally we want different augmentations.
-            # Let's apply ColorJitter to v2's RGB part only?
-            
-            v1 = tensor_4c.clone()
-            v2 = tensor_4c.clone()
-            
-            # Apply ColorJitter to v2 RGB channels
-            # jitter = T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)
-            # v2[:3] = jitter(v2[:3]) # Only works if implemented for tensor
-             
+            v2 = self._apply_augmentations(pil_img, heatmap)
         else:
-            # Val: Resize only
-            tensor_4c = TF.resize(tensor_4c, [self.image_size, self.image_size], antialias=True)
-            v1 = tensor_4c.clone()
-            v2 = tensor_4c.clone()
-
-        # Normalize RGB channels (standard ImageNet Norm)
-        # Heatmap channel (Index 3) - Leave as 0-1 or normalize?
-        # Let's leave Heatmap 0-1.
-        
-        mean_3 = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
-        std_3 = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
-        
-        v1[:3] = (v1[:3] - mean_3) / std_3
-        v2[:3] = (v2[:3] - mean_3) / std_3
+            v2 = v1.clone()
         
         return {
-            'v1': v1, # [4, H, W]
-            'v2': v2, # [4, H, W]
+            'v1': v1, # [4, H, W] or [3, H, W]
+            'v2': v2, # [4, H, W] or [3, H, W]
             'label': label
         }
 
@@ -250,7 +262,7 @@ class HeatmapBPaCoDataset(Dataset):
 # =========================================================
 
 class BpacoResNet(nn.Module):
-    def __init__(self, backbone='resnet18', num_classes=10, proj_dim=128, pretrained=True):
+    def __init__(self, backbone='resnet18', num_classes=10, proj_dim=128, pretrained=True, input_channels=4):
         super().__init__()
         
         # Backbone
@@ -258,16 +270,22 @@ class BpacoResNet(nn.Module):
         weights = 'DEFAULT' if pretrained else None
         self.encoder = model_fun(weights=weights)
         
-        # Modify Conv1 for 4 channels
+        # Modify Conv1 for input channels if not 3
         # ResNet Conv1: Conv2d(3, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
-        original_conv1 = self.encoder.conv1
-        self.encoder.conv1 = nn.Conv2d(4, 64, kernel_size=7, stride=2, padding=3, bias=False)
-        
-        with torch.no_grad():
-            # Copy RGB weights
-            self.encoder.conv1.weight[:, :3, :, :] = original_conv1.weight
-            # Init Heatmap weights (mean of RGB)
-            self.encoder.conv1.weight[:, 3, :, :] = original_conv1.weight.mean(dim=1)
+        if input_channels != 3:
+            print(f"Modifying Conv1 for {input_channels} channels.")
+            original_conv1 = self.encoder.conv1
+            self.encoder.conv1 = nn.Conv2d(input_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
+            
+            with torch.no_grad():
+                # Copy RGB weights
+                self.encoder.conv1.weight[:, :3, :, :] = original_conv1.weight
+                if input_channels > 3:
+                    # Init Heatmap weights (mean of RGB) for extra channels
+                    # For 4 channel: index 3
+                    self.encoder.conv1.weight[:, 3:, :, :] = original_conv1.weight.mean(dim=1, keepdim=True)
+        else:
+            print("Using standard 3-channel Conv1.")
             
         self.feat_dim = self.encoder.fc.in_features
         self.encoder.fc = nn.Identity()
@@ -350,22 +368,28 @@ class BPaCoHeatmapTrainer:
         self.args = args
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         
+        self.use_heatmap = not args.no_heatmap
+        self.input_channels = 4 if self.use_heatmap else 3
+        print(f"Training Config: Heatmap={self.use_heatmap}, Input Channels={self.input_channels}")
+        
         # Dataset
         self.train_dataset = HeatmapBPaCoDataset(
             args.dataset, split='train', image_size=args.image_size, sigma=args.sigma,
-            combine_train_val=args.combine_train_val
+            combine_train_val=args.combine_train_val,
+            use_heatmap=self.use_heatmap
         )
         self.val_dataset = HeatmapBPaCoDataset(
-            args.dataset, split='test', image_size=args.image_size, sigma=args.sigma
+            args.dataset, split='test', image_size=args.image_size, sigma=args.sigma,
+            use_heatmap=self.use_heatmap
         )
         
         self.num_classes = len(self.train_dataset.classes)
         print(f"Num Classes: {self.num_classes}")
         
         # Model
-        print(f"Building 4-Channel BPaCo Model ({args.backbone})...")
-        self.model_q = BpacoResNet(backbone=args.backbone, num_classes=self.num_classes).to(self.device)
-        self.model_k = BpacoResNet(backbone=args.backbone, num_classes=self.num_classes).to(self.device)
+        print(f"Building {self.input_channels}-Channel BPaCo Model ({args.backbone})...")
+        self.model_q = BpacoResNet(backbone=args.backbone, num_classes=self.num_classes, input_channels=self.input_channels).to(self.device)
+        self.model_k = BpacoResNet(backbone=args.backbone, num_classes=self.num_classes, input_channels=self.input_channels).to(self.device)
         
         # Momentum Init
         for param_q, param_k in zip(self.model_q.parameters(), self.model_k.parameters()):
@@ -476,7 +500,8 @@ class BPaCoHeatmapTrainer:
         # Load Test Dataset for Final Evaluation
         print("Loading Test Set for Final Evaluation...")
         test_dataset = HeatmapBPaCoDataset(
-            self.args.dataset, split='test', image_size=self.args.image_size, sigma=self.args.sigma
+            self.args.dataset, split='test', image_size=self.args.image_size, sigma=self.args.sigma,
+            use_heatmap=self.use_heatmap
         )
         test_loader = DataLoader(test_dataset, batch_size=self.args.batch_size, shuffle=False, num_workers=4)
         
@@ -550,7 +575,11 @@ class BPaCoHeatmapTrainer:
         results_dict = {
             'acc': acc,
             'f1': f1,
-            'auc': auc_val
+            'auc': auc_val,
+            'config': {
+                'use_heatmap': self.use_heatmap,
+                'input_channels': self.input_channels
+            }
         }
         with open(os.path.join(self.args.output_dir, "results.json"), "w") as f:
             json.dump(results_dict, f, indent=4)
@@ -607,6 +636,9 @@ if __name__ == '__main__':
     parser.add_argument('--queue-size', type=int, default=8192)
     parser.add_argument('--val-interval', type=int, default=1)
     parser.add_argument('--combine-train-val', action='store_true', help="Merge train and val folders for training", default=True)
+    
+    # New argument for ablation study
+    parser.add_argument('--no-heatmap', action='store_true', help="Disable heatmap channel (use RGB only)")
     
     args = parser.parse_args()
     

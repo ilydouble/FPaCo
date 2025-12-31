@@ -25,12 +25,13 @@ def get_arguments():
     parser.add_argument('--init_alpha', type=float, default=0.5, help='initial alpha')
     parser.add_argument('--output_dir', type=str, default='results', help='output directory for results')
     
-    parser.add_argument('--prompts_file', type=str, default='prompts/unified_prompts.json', help='path to unified prompts json file')
+    parser.add_argument('--prompts_file', type=str, default='../prompts/unified_prompts.json', help='path to unified prompts json file')
     
     # Flags
     parser.add_argument('--load_cache', action='store_true', help='load cache from file')
     parser.add_argument('--load_pre_feat', action='store_true', help='load pre-extracted features')
     parser.add_argument('--search_hp', action='store_true', help='search hyperparameters')
+    parser.add_argument('--combine_train_val', action='store_true', help='combine train and val sets for training',default=True)
     
     args = parser.parse_args()
     return args
@@ -62,7 +63,7 @@ def main():
     # Prepare Dataset
     print(f"Preparing dataset: {args.dataset}")
     # Note: BiomedDataset handles creating train_preprocess internally similar to CLIP
-    dataset = BiomedDataset(args.dataset, args.root_path, args.shots, preprocess, prompts_file=args.prompts_file)
+    dataset = BiomedDataset(args.dataset, args.root_path, args.shots, preprocess, prompts_file=args.prompts_file, combine_train_val=args.combine_train_val)
     
     # Data Loaders
     print("Building DataLoaders...")

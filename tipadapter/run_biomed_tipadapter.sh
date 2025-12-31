@@ -42,15 +42,15 @@ python "$SCRIPT_DIR/biomed_main.py" \
     --train_epoch 20 \
     --lr 0.001
 
-# 4. Fingerprint
-echo "[4/5] Running on Fingerprint..."
-python "$SCRIPT_DIR/biomed_main.py" \
-    --dataset finger \
-    --root_path "$DATASET_ROOT" \
-    --shots 16 \
-    --augment_epoch 10 \
-    --train_epoch 20 \
-    --lr 0.001
+# # 4. Fingerprint
+# echo "[4/5] Running on Fingerprint..."
+# python "$SCRIPT_DIR/biomed_main.py" \
+#     --dataset finger \
+#     --root_path "$DATASET_ROOT" \
+#     --shots 16 \
+#     --augment_epoch 10 \
+#     --train_epoch 20 \
+#     --lr 0.001
 
 # 5. OCTA
 echo "[5/5] Running on OCTA..."

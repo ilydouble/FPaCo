@@ -7,7 +7,7 @@ CONFIG_DIR="$SCRIPT_DIR/configs/"
 DATA_ROOT="$PROJECT_ROOT/datasets"
 
 # BioMedCLIP model (default: microsoft/BiomedCLIP-PubMedBERT_256-vit_large_patch16_224)
-MODEL="hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_large_patch16_224"
+MODEL="hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224"
 
 echo "========================================================="
 echo "Starting TDA experiments with BioMedCLIP (ALL datasets)"
@@ -19,7 +19,7 @@ python "$SCRIPT_DIR/tda_runner.py" \
     --dataset all \
     --data-root "$DATA_ROOT" \
     --model "$MODEL" \
-    --prompts-file "prompts/prompts_simple.json"
+    --prompts-file "../prompts/unified_prompts.json"
 
 echo "========================================================="
 echo "TDA experiments completed"

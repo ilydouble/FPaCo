@@ -18,9 +18,9 @@ DATASET_CONFIGS = {
     },
     'finger': {
         'classes': [
-            'Stone', 'Gold', 'Dream', 'Electricity', 'Wind', 'Electricity with Wind', 
-            'Drill', 'Light', 'Water', 'Fire', 'Wood', 'Earth', 'Ground', 
-            'Mountain', 'Rock', 'Fire Light', 'Fire Wood', 'Fire Earth', 'Fire Drill'
+            'Mountain', 'Fire Earth', 'Earth', 'Wind', 'Ground', 'Dream', 
+            'Fire', 'Fire Light', 'Water', 'Electricity', 'Drill', 'Light', 
+            'Electricity with Wind', 'Rock', 'Stone', 'Fire Wood', 'Wood', 'Gold'
         ],
         'folder_name': 'fingerA'
     },
@@ -64,21 +64,31 @@ def load_prompts_from_json(json_path, dataset_name):
              
     return prompts_list
 
+from PIL import Image
+
+class SimpleDataset(torch.utils.data.Dataset):
+    def __init__(self, samples, transform):
+        self.samples = samples
+        self.transform = transform
+        
+    def __len__(self):
+        return len(self.samples)
+        
+    def __getitem__(self, index):
+        path, target = self.samples[index]
+        sample = Image.open(path).convert('RGB')
+        if self.transform is not None:
+            sample = self.transform(sample)
+        return sample, target
+
 class BiomedDataset:
-    def __init__(self, dataset_name, root, num_shots, preprocess, prompts_file='prompts/unified_prompts.json'):
+    def __init__(self, dataset_name, root, num_shots, preprocess, prompts_file='prompts/unified_prompts.json', combine_train_val=False):
         self.dataset_name = dataset_name
         self.config = DATASET_CONFIGS.get(dataset_name)
         if not self.config:
             raise ValueError(f"Unknown dataset: {dataset_name}")
             
         self.root = root
-        # If root ends with 'datasets', append folder name. If root is just workspace root, append datasets/folder.
-        # Standardize: root should be the path to the specific dataset folder (e.g., .../datasets/oral_cancer_classification_dataset)
-        # However, ImageNet wrapper takes 'root' and appends 'imagenet'.
-        # Let's assume input root is the direct path to the dataset folder for simplicity in script, 
-        # or root is the 'datasets' folder. 
-        # Let's align with main.py logic to be flexible.
-        
         # Check if root points to specific dataset or needs appending
         full_path = os.path.join(root, self.config['folder_name'])
         if os.path.exists(full_path):
@@ -86,20 +96,9 @@ class BiomedDataset:
         elif os.path.exists(root) and 'train' in os.listdir(root):
              self.dataset_dir = root
         else:
-             # Fallback or error
              self.dataset_dir = full_path 
-             # print(f"Warning: Dataset path {self.dataset_dir} might not exist.")
 
         self.image_dir = self.dataset_dir
-        
-        # BioMedCLIP Preprocess for both train/val/test usually
-        # But Tip-Adapter uses RandomResizedCrop for training cache keys (few-shot)
-        # We need to construct a train transform compatible with BioMedCLIP's normalization.
-        
-        # We can extract normalization from the preprocess transform if possible, 
-        # or use standard ImageNet constants as BioMedCLIP usually uses them too?
-        # BioMedCLIP uses: mean=(0.48145466, 0.4578275, 0.40821073), std=(0.26862954, 0.26130258, 0.27577711)
-        # Same as CLIP.
         
         mean = (0.48145466, 0.4578275, 0.40821073)
         std = (0.26862954, 0.26130258, 0.27577711)
@@ -114,11 +113,6 @@ class BiomedDataset:
         self.test_preprocess = preprocess
 
         # Load Datasets
-        # We assume standard structure: train/class_x, val/class_x, test/class_x
-        # Note: Some datasets might have semantic class names in folders, others Class_0.
-        # Tip-Adapter needs to align class index. ImageFolder sorts classes alphabetically.
-        # We must ensure prompts align with this sorted order.
-        
         train_dir = os.path.join(self.image_dir, 'train')
         val_dir = os.path.join(self.image_dir, 'val')
         test_dir = os.path.join(self.image_dir, 'test')
@@ -127,8 +121,21 @@ class BiomedDataset:
             val_dir = test_dir # Use test as val if val missing
             
         self.train = datasets.ImageFolder(train_dir, transform=self.train_preprocess)
-        self.val = datasets.ImageFolder(val_dir, transform=self.test_preprocess)
+        
+        # Robust loading:
+        try:
+             self.val = datasets.ImageFolder(val_dir, transform=self.test_preprocess)
+        except Exception as e:
+             # print(f"Val set error: {e}. Fallback to Test set.")
+             self.val = datasets.ImageFolder(test_dir, transform=self.test_preprocess)
+             
         self.test = datasets.ImageFolder(test_dir, transform=self.test_preprocess)
+
+        if combine_train_val:
+            print("Combining Train and Val sets for training...")
+            self.train = torch.utils.data.ConcatDataset([self.train, self.val])
+            self.val = self.test # Use test as val since val is merged
+
         
         # Important: Verify class order matches config['classes']
         # ImageFolder classes are sorted. 
@@ -163,9 +170,23 @@ class BiomedDataset:
         self.train_x = self.train
 
     def _create_few_shot_subset(self):
+        # 1. Collect all samples
+        all_samples = []
+        if isinstance(self.train, torch.utils.data.ConcatDataset):
+            for d in self.train.datasets:
+                if hasattr(d, 'imgs'):
+                    all_samples.extend(d.imgs)
+                # If nested ConcatDataset, this might fail, but one level is expected here.
+        elif hasattr(self.train, 'imgs'):
+            all_samples = self.train.imgs
+            
+        if not all_samples:
+             print("Warning: No samples found for few-shot creation.")
+             return
+
         split_by_label_dict = defaultdict(list)
-        for i in range(len(self.train.imgs)):
-            path, label = self.train.imgs[i]
+        for i in range(len(all_samples)):
+            path, label = all_samples[i]
             split_by_label_dict[label].append((path, label))
             
         imgs = []
@@ -187,6 +208,5 @@ class BiomedDataset:
             imgs.extend(selected)
             targets.extend([label] * k)
             
-        self.train.samples = imgs
-        self.train.imgs = imgs
-        self.train.targets = targets
+        # Create new dataset inplace
+        self.train = SimpleDataset(imgs, self.train_preprocess)

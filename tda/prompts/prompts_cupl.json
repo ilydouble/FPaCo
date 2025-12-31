@@ -38,44 +38,44 @@
     },
     "finger": {
         "0": [
-            "Fingerprint pattern classification: Stone type fingerprint pattern.",
-            "Fingerprint image showing Stone pattern characteristics.",
-            "Biometric fingerprint of Stone pattern type."
+            "Fingerprint pattern classification: Mountain type fingerprint pattern.",
+            "Fingerprint image showing Mountain pattern characteristics.",
+            "Biometric fingerprint of Mountain pattern type."
         ],
         "1": [
-            "Fingerprint pattern classification: Gold type fingerprint pattern.",
-            "Fingerprint image showing Gold pattern characteristics.",
-            "Biometric fingerprint of Gold pattern type."
+            "Fingerprint pattern classification: Fire Earth type fingerprint pattern.",
+            "Fingerprint image showing combined Fire and Earth pattern.",
+            "Biometric fingerprint of Fire Earth pattern type."
         ],
         "2": [
-            "Fingerprint pattern classification: Dream type fingerprint pattern.",
-            "Fingerprint image showing Dream pattern characteristics.",
-            "Biometric fingerprint of Dream pattern type."
+            "Fingerprint pattern classification: Earth type fingerprint pattern.",
+            "Fingerprint image showing Earth pattern characteristics.",
+            "Biometric fingerprint of Earth pattern type."
         ],
         "3": [
-            "Fingerprint pattern classification: Electricity type fingerprint pattern.",
-            "Fingerprint image showing Electricity pattern characteristics.",
-            "Biometric fingerprint of Electricity pattern type."
-        ],
-        "4": [
             "Fingerprint pattern classification: Wind type fingerprint pattern.",
             "Fingerprint image showing Wind pattern characteristics.",
             "Biometric fingerprint of Wind pattern type."
         ],
+        "4": [
+            "Fingerprint pattern classification: Ground type fingerprint pattern.",
+            "Fingerprint image showing Ground pattern characteristics.",
+            "Biometric fingerprint of Ground pattern type."
+        ],
         "5": [
-            "Fingerprint pattern classification: Electricity with Wind type fingerprint pattern.",
-            "Fingerprint image showing combined Electricity and Wind pattern.",
-            "Biometric fingerprint of Electricity with Wind pattern type."
+            "Fingerprint pattern classification: Dream type fingerprint pattern.",
+            "Fingerprint image showing Dream pattern characteristics.",
+            "Biometric fingerprint of Dream pattern type."
         ],
         "6": [
-            "Fingerprint pattern classification: Drill type fingerprint pattern.",
-            "Fingerprint image showing Drill pattern characteristics.",
-            "Biometric fingerprint of Drill pattern type."
+            "Fingerprint pattern classification: Fire type fingerprint pattern.",
+            "Fingerprint image showing Fire pattern characteristics.",
+            "Biometric fingerprint of Fire pattern type."
         ],
         "7": [
-            "Fingerprint pattern classification: Light type fingerprint pattern.",
-            "Fingerprint image showing Light pattern characteristics.",
-            "Biometric fingerprint of Light pattern type."
+            "Fingerprint pattern classification: Fire Light type fingerprint pattern.",
+            "Fingerprint image showing combined Fire and Light pattern.",
+            "Biometric fingerprint of Fire Light pattern type."
         ],
         "8": [
             "Fingerprint pattern classification: Water type fingerprint pattern.",
@@ -83,54 +83,49 @@
             "Biometric fingerprint of Water pattern type."
         ],
         "9": [
-            "Fingerprint pattern classification: Fire type fingerprint pattern.",
-            "Fingerprint image showing Fire pattern characteristics.",
-            "Biometric fingerprint of Fire pattern type."
+            "Fingerprint pattern classification: Electricity type fingerprint pattern.",
+            "Fingerprint image showing Electricity pattern characteristics.",
+            "Biometric fingerprint of Electricity pattern type."
         ],
         "10": [
-            "Fingerprint pattern classification: Wood type fingerprint pattern.",
-            "Fingerprint image showing Wood pattern characteristics.",
-            "Biometric fingerprint of Wood pattern type."
+            "Fingerprint pattern classification: Drill type fingerprint pattern.",
+            "Fingerprint image showing Drill pattern characteristics.",
+            "Biometric fingerprint of Drill pattern type."
         ],
         "11": [
-            "Fingerprint pattern classification: Earth type fingerprint pattern.",
-            "Fingerprint image showing Earth pattern characteristics.",
-            "Biometric fingerprint of Earth pattern type."
+            "Fingerprint pattern classification: Light type fingerprint pattern.",
+            "Fingerprint image showing Light pattern characteristics.",
+            "Biometric fingerprint of Light pattern type."
         ],
         "12": [
-            "Fingerprint pattern classification: Ground type fingerprint pattern.",
-            "Fingerprint image showing Ground pattern characteristics.",
-            "Biometric fingerprint of Ground pattern type."
+            "Fingerprint pattern classification: Electricity with Wind type fingerprint pattern.",
+            "Fingerprint image showing combined Electricity and Wind pattern.",
+            "Biometric fingerprint of Electricity with Wind pattern type."
         ],
         "13": [
-            "Fingerprint pattern classification: Mountain type fingerprint pattern.",
-            "Fingerprint image showing Mountain pattern characteristics.",
-            "Biometric fingerprint of Mountain pattern type."
-        ],
-        "14": [
             "Fingerprint pattern classification: Rock type fingerprint pattern.",
             "Fingerprint image showing Rock pattern characteristics.",
             "Biometric fingerprint of Rock pattern type."
         ],
-        "15": [
-            "Fingerprint pattern classification: Fire Light type fingerprint pattern.",
-            "Fingerprint image showing combined Fire and Light pattern.",
-            "Biometric fingerprint of Fire Light pattern type."
+        "14": [
+            "Fingerprint pattern classification: Stone type fingerprint pattern.",
+            "Fingerprint image showing Stone pattern characteristics.",
+            "Biometric fingerprint of Stone pattern type."
         ],
-        "16": [
+        "15": [
             "Fingerprint pattern classification: Fire Wood type fingerprint pattern.",
             "Fingerprint image showing combined Fire and Wood pattern.",
             "Biometric fingerprint of Fire Wood pattern type."
         ],
-        "17": [
-            "Fingerprint pattern classification: Fire Earth type fingerprint pattern.",
-            "Fingerprint image showing combined Fire and Earth pattern.",
-            "Biometric fingerprint of Fire Earth pattern type."
+        "16": [
+            "Fingerprint pattern classification: Wood type fingerprint pattern.",
+            "Fingerprint image showing Wood pattern characteristics.",
+            "Biometric fingerprint of Wood pattern type."
         ],
-        "18": [
-            "Fingerprint pattern classification: Fire Drill type fingerprint pattern.",
-            "Fingerprint image showing combined Fire and Drill pattern.",
-            "Biometric fingerprint of Fire Drill pattern type."
+        "17": [
+            "Fingerprint pattern classification: Gold type fingerprint pattern.",
+            "Fingerprint image showing Gold pattern characteristics.",
+            "Biometric fingerprint of Gold pattern type."
         ]
     },
     "mias": {

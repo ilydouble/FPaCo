@@ -1,5 +1,0 @@
-Dataset (aptos_classification): 364 images | Accuracy: 22.5275
-Dataset (fingerprint_classification): 270 images | Accuracy: 0.7407
-Dataset (mias_classification): 28 images | Accuracy: 25.0000
-Dataset (octa_classification): 47 images | Accuracy: 21.2766
-Dataset (oral_cancer_classification): 12 images | Accuracy: 41.6667

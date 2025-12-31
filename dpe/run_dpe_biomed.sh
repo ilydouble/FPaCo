@@ -29,8 +29,8 @@ for dataset in "${DATASETS[@]}"; do
     --pos-beta 0.5 \
     --shot-capacity $CAPACITY \
     --seed 1 \
-    --prompts-file gpt3_prompts/prompts_simple.json \
-    # --use-train-cache
+    --prompts-file ../prompts/unified_prompts.json \
+    --use-train-cache
     
     echo "Finished $dataset"
     echo ""

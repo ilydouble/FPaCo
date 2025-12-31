@@ -388,7 +388,7 @@ def main():
     dataset_folder_map = {
         'oral_cancer': 'oral_cancer_classification_dataset',
         'aptos': 'aptos_classification_dataset',
-        'finger': 'fingerprint_classification_dataset',
+        'finger': 'fingerA',
         'mias': 'mias_classification_dataset',
         'octa': 'octa_classification_dataset'
     }

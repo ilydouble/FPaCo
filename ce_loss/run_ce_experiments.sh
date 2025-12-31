@@ -51,8 +51,30 @@ python3 train_ce_standard.py \
 # 4. Fingerprint
 echo "[4/5] Training on Fingerprint..."
 python3 train_ce_standard.py \
-    --dataset "$WORKSPACE/datasets/fingerprint_classification_dataset" \
+    --dataset "$WORKSPACE/datasets/fingerA" \
     --output-dir "$RESULTS_ROOT/finger" \
+    --is-finger \
+    --epochs $EPOCHS \
+    --batch-size $BATCH_SIZE \
+    --lr $LR \
+    --merge-train-val
+
+# 4. Fingerprint
+echo "[4/5] Training on Fingerprint..."
+python3 train_ce_standard.py \
+    --dataset "$WORKSPACE/datasets/fingerB" \
+    --output-dir "$RESULTS_ROOT/fingerB" \
+    --is-finger \
+    --epochs $EPOCHS \
+    --batch-size $BATCH_SIZE \
+    --lr $LR \
+    --merge-train-val
+
+# 4. Fingerprint
+echo "[4/5] Training on Fingerprint..."
+python3 train_ce_standard.py \
+    --dataset "$WORKSPACE/datasets/fingerC" \
+    --output-dir "$RESULTS_ROOT/fingerC" \
     --is-finger \
     --epochs $EPOCHS \
     --batch-size $BATCH_SIZE \

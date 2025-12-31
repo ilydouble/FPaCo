@@ -26,9 +26,9 @@ DATASET_CONFIGS = {
     },
     'finger': {
         'classes': [
-            'Stone', 'Gold', 'Dream', 'Electricity', 'Wind', 'Electricity with Wind', 
-            'Drill', 'Light', 'Water', 'Fire', 'Wood', 'Earth', 'Ground', 
-            'Mountain', 'Rock', 'Fire Light', 'Fire Wood', 'Fire Earth', 'Fire Drill'
+            'Mountain', 'Fire Earth', 'Earth', 'Wind', 'Ground', 'Dream', 
+            'Fire', 'Fire Light', 'Water', 'Electricity', 'Drill', 'Light', 
+            'Electricity with Wind', 'Rock', 'Stone', 'Fire Wood', 'Wood', 'Gold'
         ]
     },
     'mias': {

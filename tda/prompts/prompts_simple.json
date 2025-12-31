@@ -18,61 +18,58 @@
     },
     "finger": {
         "0": [
-            "fingerprint pattern of type Stone"
+            "fingerprint pattern of type Mountain"
         ],
         "1": [
-            "fingerprint pattern of type Gold"
+            "fingerprint pattern of type Fire Earth"
         ],
         "2": [
-            "fingerprint pattern of type Dream"
+            "fingerprint pattern of type Earth"
         ],
         "3": [
-            "fingerprint pattern of type Electricity"
-        ],
-        "4": [
             "fingerprint pattern of type Wind"
         ],
+        "4": [
+            "fingerprint pattern of type Ground"
+        ],
         "5": [
-            "fingerprint pattern of type Electricity with Wind"
+            "fingerprint pattern of type Dream"
         ],
         "6": [
-            "fingerprint pattern of type Drill"
+            "fingerprint pattern of type Fire"
         ],
         "7": [
-            "fingerprint pattern of type Light"
+            "fingerprint pattern of type Fire Light"
         ],
         "8": [
             "fingerprint pattern of type Water"
         ],
         "9": [
-            "fingerprint pattern of type Fire"
+            "fingerprint pattern of type Electricity"
         ],
         "10": [
-            "fingerprint pattern of type Wood"
+            "fingerprint pattern of type Drill"
         ],
         "11": [
-            "fingerprint pattern of type Earth"
+            "fingerprint pattern of type Light"
         ],
         "12": [
-            "fingerprint pattern of type Ground"
+            "fingerprint pattern of type Electricity with Wind"
         ],
         "13": [
-            "fingerprint pattern of type Mountain"
-        ],
-        "14": [
             "fingerprint pattern of type Rock"
         ],
-        "15": [
-            "fingerprint pattern of type Fire Light"
+        "14": [
+            "fingerprint pattern of type Stone"
         ],
-        "16": [
+        "15": [
             "fingerprint pattern of type Fire Wood"
         ],
-        "17": [
-            "fingerprint pattern of type Fire Earth"
+        "16": [
+            "fingerprint pattern of type Wood"
         ],
-        "18": [
-            "fingerprint pattern of type Fire Drill"
+        "17": [
+            "fingerprint pattern of type Gold"
         ]
     },
     "mias": {
