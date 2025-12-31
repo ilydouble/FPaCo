@@ -3,7 +3,7 @@ import yaml
 import torch
 import math
 import numpy as np
-import clip
+import open_clip
 from datasets.imagenet import ImageNet
 from datasets import build_dataset
 from datasets.utils import build_data_loader, AugMixAugmenter
@@ -15,6 +15,7 @@ try:
     BICUBIC = InterpolationMode.BICUBIC
 except ImportError:
     BICUBIC = Image.BICUBIC
+
 
 def get_entropy(loss, clip_weights):
     max_entropy = math.log2(clip_weights.size(1))
@@ -41,7 +42,8 @@ def cls_acc(output, target, topk=1):
     return acc
 
 
-def clip_classifier(classnames, template, clip_model):
+def clip_classifier(classnames, template, clip_model, tokenizer, device):
+    """Build classifier weights using BioMedCLIP with open_clip tokenizer."""
     with torch.no_grad():
         clip_weights = []
 
@@ -49,24 +51,25 @@ def clip_classifier(classnames, template, clip_model):
             # Tokenize the prompts
             classname = classname.replace('_', ' ')
             texts = [t.format(classname) for t in template]
-            texts = clip.tokenize(texts).cuda()
-            # prompt ensemble for ImageNet
+            texts = tokenizer(texts).to(device)
+            # prompt ensemble
             class_embeddings = clip_model.encode_text(texts)
             class_embeddings /= class_embeddings.norm(dim=-1, keepdim=True)
             class_embedding = class_embeddings.mean(dim=0)
             class_embedding /= class_embedding.norm()
             clip_weights.append(class_embedding)
 
-        clip_weights = torch.stack(clip_weights, dim=1).cuda()
+        clip_weights = torch.stack(clip_weights, dim=1).to(device)
     return clip_weights
 
 
-def get_clip_logits(images, clip_model, clip_weights):
+def get_clip_logits(images, clip_model, clip_weights, device):
+    """Get CLIP logits using BioMedCLIP model."""
     with torch.no_grad():
         if isinstance(images, list):
-            images = torch.cat(images, dim=0).cuda()
+            images = torch.cat(images, dim=0).to(device)
         else:
-            images = images.cuda()
+            images = images.to(device)
 
         image_features = clip_model.encode_image(images)
         image_features /= image_features.norm(dim=-1, keepdim=True)
@@ -113,13 +116,17 @@ def get_config_file(config_path, dataset_name):
     else:
         config_name = f"{dataset_name}.yaml"
     
-    config_file = os.path.join(config_path, config_name)
+    config_file = os.path.join(config_path, dataset_name + ".yaml")
+    
+    # Try exact match first, then fallback
+    if not os.path.exists(config_file):
+        config_file = os.path.join(config_path, config_name)
+    
+    if not os.path.exists(config_file):
+        raise FileNotFoundError(f"The configuration file {config_file} was not found.")
     
     with open(config_file, 'r') as file:
         cfg = yaml.load(file, Loader=yaml.SafeLoader)
-
-    if not os.path.exists(config_file):
-        raise FileNotFoundError(f"The configuration file {config_file} was not found.")
 
     return cfg
 
@@ -138,7 +145,12 @@ def build_test_data_loader(dataset_name, root_path, preprocess):
         dataset = build_dataset(dataset_name, root_path)
         test_loader = build_data_loader(data_source=dataset.test, batch_size=1, is_train=False, tfm=preprocess, shuffle=True)
     
+    # Medical datasets
+    elif dataset_name in ['oral_cancer', 'aptos', 'finger', 'mias', 'octa']:
+        dataset = build_dataset(dataset_name, root_path, preprocess)
+        test_loader = build_data_loader(data_source=dataset.test, batch_size=1, is_train=False, tfm=preprocess, shuffle=True)
+    
     else:
-        raise "Dataset is not from the chosen list"
+        raise ValueError(f"Dataset '{dataset_name}' is not from the chosen list")
     
     return test_loader, dataset.classnames, dataset.template

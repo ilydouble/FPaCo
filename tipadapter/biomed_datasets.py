@@ -1,5 +1,6 @@
 import os
 import random
+import json
 from collections import defaultdict
 import torch
 import torchvision.datasets as datasets
@@ -9,21 +10,10 @@ import torchvision.transforms as transforms
 DATASET_CONFIGS = {
     'oral_cancer': {
         'classes': ['Normal', 'Oral Cancer'],
-        'prompts': [
-            'histopathology image of normal oral tissue',
-            'histopathology image of oral squamous cell carcinoma',
-        ],
         'folder_name': 'oral_cancer_classification_dataset'
     },
     'aptos': {
         'classes': ['No DR', 'Mild', 'Moderate', 'Severe', 'Proliferative'],
-        'prompts': [
-            'fundus image with no diabetic retinopathy',
-            'fundus image with mild diabetic retinopathy',
-            'fundus image with moderate diabetic retinopathy',
-            'fundus image with severe diabetic retinopathy',
-            'fundus image with proliferative diabetic retinopathy',
-        ],
         'folder_name': 'aptos_classification_dataset'
     },
     'finger': {
@@ -32,59 +22,50 @@ DATASET_CONFIGS = {
             'Drill', 'Light', 'Water', 'Fire', 'Wood', 'Earth', 'Ground', 
             'Mountain', 'Rock', 'Fire Light', 'Fire Wood', 'Fire Earth', 'Fire Drill'
         ],
-        'prompts': [
-            'fingerprint pattern of type Stone',
-            'fingerprint pattern of type Gold',
-            'fingerprint pattern of type Dream',
-            'fingerprint pattern of type Electricity',
-            'fingerprint pattern of type Wind',
-            'fingerprint pattern of type Electricity with Wind',
-            'fingerprint pattern of type Drill',
-            'fingerprint pattern of type Light',
-            'fingerprint pattern of type Water',
-            'fingerprint pattern of type Fire',
-            'fingerprint pattern of type Wood',
-            'fingerprint pattern of type Earth',
-            'fingerprint pattern of type Ground',
-            'fingerprint pattern of type Mountain',
-            'fingerprint pattern of type Rock',
-            'fingerprint pattern of type Fire Light',
-            'fingerprint pattern of type Fire Wood',
-            'fingerprint pattern of type Fire Earth',
-            'fingerprint pattern of type Fire Drill',
-        ],
         'folder_name': 'fingerprint_classification_dataset'
     },
     'mias': {
-        'classes': ['CALC', 'CIRC', 'SPIC', 'MISC', 'ARCH', 'ASYM', 'NORM'],
-        'prompts': [
-            'mammogram showing calcification',
-            'mammogram showing circumscribed masses',
-            'mammogram showing spiculated masses',
-            'mammogram showing ill-defined masses', 
-            'mammogram showing architectural distortion',
-            'mammogram showing asymmetry',
-            'normal mammogram',
-        ],
+        'classes': ['NORM', 'CALC', 'CIRC', 'SPIC', 'MISC', 'ARCH', 'ASYM'],
         'folder_name': 'mias_classification_dataset'
     },
     'octa': {
-        'classes': ['AMD', 'CNV', 'DR', 'ERM', 'Normal', 'OHT', 'RVO'],
-        'prompts': [
-            'OCTA image of Age-related Macular Degeneration',
-            'OCTA image of Choroidal Neovascularization',
-            'OCTA image of Diabetic Retinopathy',
-            'OCTA image of Epiretinal Membrane',
-            'Normal OCTA image',
-            'OCTA image of Ocular Hypertension',
-            'OCTA image of Retinal Vein Occlusion',
-        ],
+        'classes': ['AMD', 'CNV', 'CSC', 'DR', 'Normal', 'Others', 'RVO'],
         'folder_name': 'octa_classification_dataset'
     }
 }
 
+def load_prompts_from_json(json_path, dataset_name):
+    """Load prompts from the unified JSON file."""
+    if not os.path.exists(json_path):
+        # Allow fallback relative to parent directory if script is nested
+        fallback = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), json_path)
+        if os.path.exists(fallback):
+             json_path = fallback
+        else:
+             raise FileNotFoundError(f"Prompts file not found: {json_path}")
+        
+    with open(json_path, 'r') as f:
+        data = json.load(f)
+        
+    if dataset_name not in data:
+        raise ValueError(f"Dataset {dataset_name} not found in {json_path}")
+        
+    class_prompts_map = data[dataset_name]
+    # Keys are strings "0", "1", etc. Sort them numerically to ensure order
+    sorted_keys = sorted(class_prompts_map.keys(), key=lambda x: int(x))
+    
+    prompts_list = []
+    for k in sorted_keys:
+        p_list = class_prompts_map[k]
+        if isinstance(p_list, list):
+            prompts_list.append(p_list) 
+        else:
+             prompts_list.append([str(p_list)])
+             
+    return prompts_list
+
 class BiomedDataset:
-    def __init__(self, dataset_name, root, num_shots, preprocess):
+    def __init__(self, dataset_name, root, num_shots, preprocess, prompts_file='prompts/unified_prompts.json'):
         self.dataset_name = dataset_name
         self.config = DATASET_CONFIGS.get(dataset_name)
         if not self.config:
@@ -161,8 +142,13 @@ class BiomedDataset:
         
         # Use full prompts (e.g., "fingerprint pattern of type Stone") instead of raw class names ("Stone")
         # This aligns with BioMedCLIP Zero-Shot baseline performance.
-        self.classnames = self.config['prompts']
-        
+        try:
+             self.classnames = load_prompts_from_json(prompts_file, dataset_name)
+             print(f"Loaded {len(self.classnames)} prompts for {dataset_name}")
+        except Exception as e:
+             print(f"Error loading prompts: {e}")
+             self.classnames = [] # Validate later
+             
         # Template: Tip-Adapter uses standard prompts usually "a photo of a {}". 
         # But we actully defined full sentence prompts in config. 
         # So our template should be just "{}".

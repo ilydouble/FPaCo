@@ -1,0 +1,268 @@
+{
+    "aptos": {
+        "0": [
+            "A fundus photograph showing a healthy retina with no signs of diabetic retinopathy.",
+            "Retinal image with normal appearance, no microaneurysms or hemorrhages visible.",
+            "Fundus image demonstrating no diabetic retinopathy, clear retinal vasculature.",
+            "Normal fundus scan without any diabetic changes.",
+            "Healthy retinal scan showing no evidence of diabetic eye disease."
+        ],
+        "1": [
+            "Fundus photograph showing mild nonproliferative diabetic retinopathy.",
+            "Retinal image with few microaneurysms indicating mild diabetic retinopathy.",
+            "Fundus scan demonstrating early signs of diabetic retinopathy with scattered microaneurysms.",
+            "Mild diabetic retinopathy with minimal retinal changes.",
+            "Early stage diabetic retinopathy fundus image with few abnormalities."
+        ],
+        "2": [
+            "Fundus photograph showing moderate nonproliferative diabetic retinopathy.",
+            "Retinal image with multiple microaneurysms and dot hemorrhages.",
+            "Moderate diabetic retinopathy with visible hard exudates and hemorrhages.",
+            "Fundus scan showing moderate diabetic eye disease with scattered retinal lesions.",
+            "Moderate stage diabetic retinopathy with significant microaneurysms."
+        ],
+        "3": [
+            "Fundus photograph showing severe nonproliferative diabetic retinopathy.",
+            "Retinal image with extensive hemorrhages and venous beading.",
+            "Severe diabetic retinopathy with intraretinal microvascular abnormalities.",
+            "Fundus scan demonstrating severe diabetic changes requiring close monitoring.",
+            "Advanced nonproliferative diabetic retinopathy with numerous hemorrhages."
+        ],
+        "4": [
+            "Fundus photograph showing proliferative diabetic retinopathy.",
+            "Retinal image with neovascularization and abnormal blood vessel growth.",
+            "Proliferative diabetic retinopathy with new vessel formation.",
+            "Advanced diabetic retinopathy fundus scan with vitreous hemorrhage risk.",
+            "Severe proliferative diabetic eye disease requiring urgent treatment."
+        ]
+    },
+    "finger": {
+        "0": [
+            "Fingerprint pattern of type Stone (WrI or Incomplete Peacock). Visual pattern looks like an incomplete peacock feather.",
+            "Incomplete Peacock Whorl (WrI): Has 1 inner delta and 1 outer delta, but the inner delta may be incomplete.",
+            "Fingerprint with peacock-like pattern but incomplete inner features (Stone type).",
+            "Dermatoglyphics: Stone pattern (WrI), resembling a peacock feather that hasn't fully formed."
+        ],
+        "1": [
+            "Fingerprint pattern of type Gold (Wt or Concentric Whorl). Visual pattern looks like a target or bullseye.",
+            "Concentric Whorl (Wt): Central ridges form complete concentric circles around the center.",
+            "Gold type fingerprint: Within the innermost 3 circles, there is at least one complete closed and independent loop.",
+            "Dermatoglyphics: Whorl pattern with concentric circular ridges forming a target shape."
+        ],
+        "2": [
+            "Fingerprint pattern of type Dream (Lf or Falling Loop). Visual pattern is a U-shape flowing out with convergence at the top.",
+            "Falling Loop (Lf): Has 1 outer delta and a convergence point at the top of the U-shape.",
+            "Dream type fingerprint: At the top of the U-shape, 4 or more ridges converge forming an acute angle and do not flow out.",
+            "Dermatoglyphics: Falling Loop pattern with ridges forming a sharp wedge at the top."
+        ],
+        "3": [
+            "Fingerprint pattern of type Electricity (Wc or Composite Whorl). Visual pattern looks like a Tai-Chi shape.",
+            "Composite Whorl (Wc): Central ridges form a complete S-line.",
+            "Electricity type fingerprint: S-line structure with ridges on both sides flowing INTO deltas.",
+            "Dermatoglyphics: Composite/Tai-Chi pattern with an S-shaped core and two deltas."
+        ],
+        "4": [
+            "Fingerprint pattern of type Wind (At or Tented Arch). Visual pattern has ridges rising high with a '人' shape like a tent.",
+            "Tented Arch (At): Ridges rise sharply in the center forming a tent-like peak.",
+            "Wind type fingerprint: High arch with a sharp peak in the center.",
+            "Dermatoglyphics: Arch pattern with a significant spike or tent-like feature in the middle."
+        ],
+        "5": [
+            "Fingerprint pattern of type Electricity with Wind (Composite of Tai-Chi and Tented Arch).",
+            "Fingerprint showing features of both Electricity (Composite Whorl) and Wind (Tented Arch) patterns.",
+            "Combined pattern: Tai-Chi S-line structure mixed with a sharp tented arch peak."
+        ],
+        "6": [
+            "Fingerprint pattern of type Drill (Wd or Double Loop Whorl). Visual pattern looks like a flattened Tai-Chi shape.",
+            "Double Loop Whorl (Wd): Central ridges form a complete S-line where ridges flow OUT OF deltas.",
+            "Drill type fingerprint: S-line structure distinguishing it from Composite Whorl by ridge flow direction.",
+            "Dermatoglyphics: Two distinct loop formations twisting together like a drill."
+        ],
+        "7": [
+            "Fingerprint pattern of type Light (We or Press Whorl). Visual pattern looks like a football or olive shape.",
+            "Press Whorl (We): Central ridges form an elongated spiral.",
+            "Light type fingerprint: Within the central 3 circles, the length is at least 2.5 times the width.",
+            "Dermatoglyphics: Elongated whorl pattern resembling a pressed circle or olive."
+        ],
+        "8": [
+            "Fingerprint pattern of type Water (Lu or Ulnar Loop). Visual pattern looks like a horseshoe flowing towards the little finger.",
+            "Ulnar Loop (Lu): Ridges form a U-shape opening towards the little finger side with 1 outer delta.",
+            "Water type fingerprint: Classic loop pattern flowing in the ulnar direction.",
+            "Dermatoglyphics: Ulnar Loop, the most common fingerprint pattern."
+        ],
+        "9": [
+            "Fingerprint pattern of type Fire (Lr or Radial Loop). Visual pattern looks like a horseshoe flowing towards the thumb.",
+            "Radial Loop (Lr): Ridges form a U-shape opening towards the thumb side with 1 outer delta.",
+            "Fire type fingerprint: Loop pattern flowing in the radial (thumb) direction.",
+            "Dermatoglyphics: Radial Loop, less common than Ulnar Loop."
+        ],
+        "10": [
+            "Fingerprint pattern of type Wood (Ws or Spiral Whorl). Visual pattern looks like a spiral.",
+            "Spiral Whorl (Ws): Central ridges form a spiral pattern around the center.",
+            "Wood type fingerprint: Within the central 3 circles, the length is less than 2 times the width.",
+            "Dermatoglyphics: Whorl pattern with ridges spiraling out from the core."
+        ],
+        "11": [
+            "Fingerprint pattern of type Earth (As or Simple Arch). Visual pattern looks like a flat mound or bow.",
+            "Simple Arch (As): Smooth arched ridges flowing from one side to the other without deltas.",
+            "Earth type fingerprint: Simple, flat arch with no complexity or sharp peaks.",
+            "Dermatoglyphics: The simplest arch pattern with gentle waves."
+        ],
+        "12": [
+            "Fingerprint pattern of type Ground (Aul or Ulnar Loop Arch). Visual pattern looks like a horseshoe but with 0 deltas.",
+            "Ulnar Loop Arch (Aul): Overall ridges vary form a U-shape towards the little finger but lack a delta.",
+            "Ground type fingerprint: Resembles Ulnar Loop but is technically an Arch due to missing delta.",
+            "Dermatoglyphics: Hybrid arch-loop pattern classified as Arch."
+        ],
+        "13": [
+            "Fingerprint pattern of type Mountain (Ae or Elevated Arch). Visual pattern looks like a raised hill.",
+            "Elevated Arch (Ae): Bottom ridges form an arc enclosing a triangular or circular shape.",
+            "Mountain type fingerprint: Arch with a prominent raised area or enclosed block at the base.",
+            "Dermatoglyphics: Complex arch pattern with elevations."
+        ],
+        "14": [
+            "Fingerprint pattern of type Rock (Wp or Peacock Whorl). Visual pattern looks like a peacock feather.",
+            "Peacock Whorl (Wp): Has 1 inner delta and 1 outer delta with symmetrical ridge convergence.",
+            "Rock type fingerprint: Ridges on both sides converge symmetrically or cross each other.",
+            "Dermatoglyphics: Distinctive peacock eye pattern with two deltas."
+        ],
+        "15": [
+            "Fingerprint pattern of type Fire Light (Composite of Radial Loop and Press Whorl).",
+            "Fingerprint showing combined features of Fire (Radial Loop) and Light (Press Whorl) patterns.",
+            "Combined pattern: Radial flow mixed with an elongated, olive-shaped whorl."
+        ],
+        "16": [
+            "Fingerprint pattern of type Fire Wood (Composite of Radial Loop and Spiral Whorl).",
+            "Fingerprint showing combined features of Fire (Radial Loop) and Wood (Spiral Whorl) patterns.",
+            "Combined pattern: Radial flow mixed with a spiral whorl."
+        ],
+        "17": [
+            "Fingerprint pattern of type Fire Earth (Composite of Radial Loop and Simple Arch).",
+            "Fingerprint showing combined features of Fire (Radial Loop) and Earth (Simple Arch) patterns.",
+            "Combined pattern: Radial flow mixed with simple arched ridges."
+        ],
+        "18": [
+            "Fingerprint pattern of type Fire Drill (Composite of Radial Loop and Double Loop Whorl).",
+            "Fingerprint showing combined features of Fire (Radial Loop) and Drill (Double Loop) patterns.",
+            "Combined pattern: Radial flow mixed with twisted double loop structures."
+        ]
+    },
+    "mias": {
+        "0": [
+            "Normal mammogram showing healthy breast tissue.",
+            "Mammography scan with no abnormal findings.",
+            "Healthy breast X-ray image with normal tissue pattern.",
+            "Normal mammogram without any suspicious lesions.",
+            "Clear mammography scan showing normal breast parenchyma."
+        ],
+        "1": [
+            "Mammogram showing calcifications in breast tissue.",
+            "Mammography scan with microcalcifications visible.",
+            "Breast X-ray displaying calcified deposits.",
+            "Mammogram with clustered calcifications.",
+            "Calcification pattern visible on mammography image."
+        ],
+        "2": [
+            "Mammogram showing circumscribed masses with well-defined borders.",
+            "Breast X-ray image with clearly outlined round or oval mass.",
+            "Mammography scan displaying circumscribed breast lesion.",
+            "Well-circumscribed mass visible in mammogram image.",
+            "Mammogram with smooth-bordered tumor mass."
+        ],
+        "3": [
+            "Mammogram showing spiculated masses with irregular borders.",
+            "Breast X-ray with star-shaped or spiculated lesion.",
+            "Mammography image displaying spiculated tumor mass.",
+            "Spiculated breast mass on mammogram suggestive of malignancy.",
+            "Mammogram showing irregular spiculated breast lesion."
+        ],
+        "4": [
+            "Mammogram showing ill-defined masses or miscellaneous abnormalities.",
+            "Breast X-ray with miscellaneous findings or ill-defined densities.",
+            "Mammography image with unclassified abnormal features.",
+            "Mammogram showing non-specific breast changes or ill-defined mass.",
+            "Mammogram with miscellaneous breast abnormality."
+        ],
+        "5": [
+            "Mammogram showing architectural distortion of breast tissue.",
+            "Mammography scan with distorted tissue architecture.",
+            "Breast X-ray displaying spiculated architectural changes.",
+            "Mammogram with architectural distortion pattern.",
+            "Distorted breast parenchyma visible on mammogram."
+        ],
+        "6": [
+            "Mammogram showing breast asymmetry between left and right.",
+            "Mammography scan with asymmetric breast tissue density.",
+            "Breast X-ray displaying asymmetric findings.",
+            "Asymmetric mammogram requiring further evaluation.",
+            "Mammogram showing focal asymmetry in breast tissue."
+        ]
+    },
+    "octa": {
+        "0": [
+            "OCTA image showing age-related macular degeneration (AMD).",
+            "Optical Coherence Tomography Angiography with AMD features.",
+            "OCTA scan displaying macular degeneration changes.",
+            "Age-related macular degeneration visible on OCTA.",
+            "OCTA showing drusen and AMD-related vascular changes."
+        ],
+        "1": [
+            "OCTA image showing choroidal neovascularization (CNV).",
+            "Optical Coherence Tomography Angiography with CNV membrane.",
+            "OCTA scan displaying abnormal choroidal vessels.",
+            "Choroidal neovascularization pattern on OCTA.",
+            "OCTA showing subretinal neovascular membrane."
+        ],
+        "2": [
+            "OCTA image showing central serous chorioretinopathy (CSC).",
+            "Optical Coherence Tomography Angiography with CSC features.",
+            "OCTA scan displaying subretinal fluid and choroidal thickness changes.",
+            "Central serous chorioretinopathy pattern on OCTA.",
+            "OCTA showing pigment epithelial detachment in CSC."
+        ],
+        "3": [
+            "OCTA image showing diabetic retinopathy (DR).",
+            "Optical Coherence Tomography Angiography with microaneurysms.",
+            "OCTA scan displaying diabetic macular changes.",
+            "Diabetic retinopathy pattern visible on OCTA.",
+            "OCTA showing capillary non-perfusion areas from diabetes."
+        ],
+        "4": [
+            "OCTA image showing normal retinal vasculature (NORMAL).",
+            "Optical Coherence Tomography Angiography scan with healthy blood vessels.",
+            "Normal OCTA scan without vascular abnormalities.",
+            "Healthy retinal blood flow pattern on OCTA.",
+            "OCTA image demonstrating normal foveal avascular zone."
+        ],
+        "5": [
+            "OCTA image showing other retinal abnormalities (OTHERS).",
+            "Optical Coherence Tomography Angiography with unclassified pathology.",
+            "OCTA scan displaying non-specific retinal vascular changes.",
+            "Other retinal disease pattern visible on OCTA.",
+            "OCTA showing retinal abnormalities not falling into major categories."
+        ],
+        "6": [
+            "OCTA image showing retinal vein occlusion (RVO).",
+            "Optical Coherence Tomography Angiography with venous occlusion.",
+            "OCTA scan displaying retinal venous blockage.",
+            "Retinal vein occlusion pattern visible on OCTA.",
+            "OCTA showing venous congestion and non-perfusion."
+        ]
+    },
+    "oral_cancer": {
+        "0": [
+            "Histopathology image of normal oral mucosa tissue.",
+            "Microscopic view of healthy oral epithelium.",
+            "Normal oral tissue biopsy without malignancy.",
+            "Healthy oral cavity tissue under microscope.",
+            "Non-cancerous oral mucosa histology slide."
+        ],
+        "1": [
+            "Histopathology image of oral squamous cell carcinoma.",
+            "Microscopic view of malignant oral cancer tissue.",
+            "Oral carcinoma biopsy showing cancerous cells.",
+            "Oral cancer tissue under microscope with atypical cells.",
+            "Malignant oral squamous cell carcinoma histology slide."
+        ]
+    }
+}

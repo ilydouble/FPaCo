@@ -1,6 +1,0 @@
-{
-    "dataset": "oral_cancer",
-    "accuracy": 50.0,
-    "f1": 0.3333333333333333,
-    "auc": null
-}

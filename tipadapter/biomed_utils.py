@@ -38,9 +38,14 @@ def clip_classifier(classnames, template, clip_model, tokenizer, device):
         clip_weights = []
 
         for classname in classnames:
-            # Tokenize the prompts
-            classname = classname.replace('_', ' ')
-            texts = [t.format(classname) for t in template]
+            # Check if classname is actually a list of prompts (Ensemble)
+            if isinstance(classname, list):
+                texts = classname
+            else:
+                # Single prompt string
+                classname = classname.replace('_', ' ')
+                texts = [t.format(classname) for t in template]
+                
             texts = tokenizer(texts).to(device)
             # prompt ensemble
             class_embeddings = clip_model.encode_text(texts)
