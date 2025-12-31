@@ -95,8 +95,10 @@ DATASET_CONFIGS = {
     }
 }
 
-def load_biomedclip(device, model_name, cache_dir=None):
+def load_biomedclip(device, model_name, cache_dir):
     print(f"Loading BioMedCLIP model: {model_name}...")
+    os.makedirs(cache_dir, exist_ok=True)
+    print(f"Using cache directory: {cache_dir}")
     # open_clip.create_model_and_transforms automatically handles downloading from HF Hub if model_name starts with 'hf-hub:'
     # The cache_dir arg allows specifying where to save/load the model.
     model, preprocess_train, preprocess_val = open_clip.create_model_and_transforms(
@@ -213,10 +215,15 @@ def main():
     parser.add_argument('--model', default='hf-hub:microsoft/BiomedCLIP-PubMedBERT_256-vit_base_patch16_224', help='BioMedCLIP model name (e.g. hf-hub:ZiyueWang/med-clip for 448 resolution)')
     parser.add_argument('--cache-dir', default=None, help='Directory to cache the downloaded model')
     args = parser.parse_args()
-    
+    if args.cache_dir is None:
+        current_script_dir = os.path.dirname(os.path.abspath(__file__))
+        args.cache_dir = os.path.join(current_script_dir, "hf_cache")
+    print(f"Using cache directory: {args.cache_dir}")   
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model, preprocess, tokenizer = load_biomedclip(device, args.model, args.cache_dir)
-    
+
+
+
     datasets_map = {
         'oral_cancer': 'oral_cancer_classification_dataset',
         'aptos': 'aptos_classification_dataset',
