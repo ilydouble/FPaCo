@@ -35,9 +35,60 @@ from sklearn.metrics import (
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# =========================================================
+# Morphology Transform for Fingerprint (Copied from Baseline)
+# =========================================================
+
+class FingerprintMorphologyTransform:
+    def __init__(self, kernel_tophat=15, kernel_blackhat=25, kernel_open=3, block_size=21, C=8):
+        self.kernel_tophat = kernel_tophat
+        self.kernel_blackhat = kernel_blackhat
+        self.kernel_open = kernel_open
+        self.block_size = block_size
+        self.C = C
+
+    def __call__(self, x):
+        if isinstance(x, Image.Image):
+            x = T.ToTensor()(x)
+        
+        if x.ndim == 4:
+            x = x.squeeze(0)
+            
+        img = x.cpu().numpy()
+        
+        if img.ndim == 3 and img.shape[0] == 3:
+             img = img[0, :, :]
+        elif img.ndim == 3 and img.shape[0] == 1:
+             img = img.squeeze(0)
+             
+        img = np.ascontiguousarray(img)
+        
+        img_u8 = np.clip(img * 255.0, 0, 255).astype(np.uint8)
+
+        k_top = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.kernel_tophat, self.kernel_tophat))
+        tophat = cv2.morphologyEx(img_u8, cv2.MORPH_TOPHAT, k_top)
+        tophat_enh = cv2.normalize(tophat, None, 0, 255, cv2.NORM_MINMAX) if tophat.max() > 0 else tophat
+
+        binary = cv2.adaptiveThreshold(tophat_enh, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, self.block_size, self.C)
+
+        k_bh = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.kernel_blackhat, self.kernel_blackhat))
+        blackhat = cv2.morphologyEx(img_u8, cv2.MORPH_BLACKHAT, k_bh)
+        if blackhat.max() > 0:
+            blackhat = cv2.normalize(blackhat, None, 0, 255, cv2.NORM_MINMAX)
+        blackhat_bin = cv2.adaptiveThreshold(blackhat, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, self.block_size, self.C)
+
+        k_open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.kernel_open, self.kernel_open))
+        blackhat_open = cv2.morphologyEx(blackhat_bin, cv2.MORPH_OPEN, k_open)
+
+        inv_blackhat = 255 - blackhat_open
+        result = cv2.bitwise_and(binary, inv_blackhat)
+        result_t = torch.from_numpy(result.astype(np.float32) / 255.0).unsqueeze(0)
+        return result_t
+
 try:
     from heatmap_utils import generate_gaussian_heatmap, parse_detections_from_json
     from heat_augmentation import YOLOAugmentation
+
 except ImportError:
     # Inline fallback if import fails
     def generate_gaussian_heatmap(h, w, boxes, scores=None, sigma=15):
@@ -61,6 +112,15 @@ except ImportError:
               for det in data['detections']:
                   boxes.append(det['bbox'])
          return np.array(boxes), None
+
+    class YOLOAugmentation:
+        """Fallback minimal augmentation if import fails"""
+        @staticmethod
+        def hsv_augment(image, **kwargs): return image
+        @staticmethod
+        def gaussian_blur(image, **kwargs): return image
+        @staticmethod
+        def add_noise(image, **kwargs): return image
 
 
 # Set Seed
@@ -135,74 +195,114 @@ class HeatmapBPaCoDataset(Dataset):
         print(f"[{split}] Loaded {len(self.samples)} samples. Classes: {len(self.classes)}. Heatmap enabled: {self.use_heatmap}")
         
         self.normalize = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        self.yolo_aug = YOLOAugmentation()
-        
-        # Determine if we should skip geometric transforms (for 'finger' datasets)
-        self.skip_geometric = 'finger' in str(self.dataset_dir).lower()
-        if self.skip_geometric:
-            print(f"[{split}] 'finger' detected in dataset path. Geometric transforms (flip/rotate) will be SKIPPED.")
+        if 'finger' in str(self.dataset_dir).lower():
+            self.normalize = T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
+        self.is_finger = 'finger' in str(self.dataset_dir).lower()
+        if self.is_finger:
+            self.morph = FingerprintMorphologyTransform()
+        
     def __len__(self):
         return len(self.samples)
 
     def _apply_augmentations(self, pil_img, heatmap_np):
         """
-        Apply augmentation to a single sample.
-        Geometric transforms applied to both img and heat.
-        Photometric transforms applied only to img.
+        Apply augmentation to a single sample using logic aligned with Focal/CE/GPaCo baselines.
         """
-        # Convert to Tensor for joint geometric transforms
-        img_tensor = TF.to_tensor(pil_img) # 0-1
-        
-        if self.use_heatmap: # 4 channels
-            heat_tensor = torch.from_numpy(heatmap_np).unsqueeze(0) # [1, H, W]
-            tensor_to_aug = torch.cat([img_tensor, heat_tensor], dim=0) # [4, H, W]
-        else: # 3 channels
-            tensor_to_aug = img_tensor # [3, H, W]
-
-        # 1. Base Resize
-        tensor_to_aug = TF.resize(tensor_to_aug, [self.image_size, self.image_size], antialias=True)
-
-        if self.split == 'train':
-            # 2. Geometric Transforms (Joint)
-            if not self.skip_geometric:
-                if random.random() < 0.5:
-                    tensor_to_aug = TF.hflip(tensor_to_aug)
-                
-                if random.random() < 0.5:
-                    angle = random.uniform(-15, 15)
-                    tensor_to_aug = TF.rotate(tensor_to_aug, angle)
-
-            # Split back for photometric
-            if self.use_heatmap:
-                img_aug = TF.to_pil_image(tensor_to_aug[:3, :, :])
-                heat_aug = tensor_to_aug[3, :, :].unsqueeze(0)
-            else:
-                img_aug = TF.to_pil_image(tensor_to_aug)
-                heat_aug = None
-
-            # 3. Photometric Transforms (RGB only)
-            # Apply Strong YOLO-style augmentation to all
-            img_aug = self.yolo_aug.hsv_augment(img_aug)
-            img_aug = self.yolo_aug.gaussian_blur(img_aug, p=0.2, kernel_size=5)
-            img_aug = self.yolo_aug.add_noise(img_aug, p=0.15)
+        # --- 1. Fingerprint Strategy (Morphology) ---
+        if self.is_finger:
+            img_tensor = TF.to_tensor(pil_img)
             
-            final_img = TF.to_tensor(img_aug)
-            final_heat = heat_aug
-        else:
-            if self.use_heatmap:
-                final_img = tensor_to_aug[:3, :, :]
-                final_heat = tensor_to_aug[3, :, :].unsqueeze(0)
-            else:
-                final_img = tensor_to_aug
-                final_heat = None
+            # Apply Morphology Logic (Prob 0.7)
+            # Note: The baseline applies morph with p=0.7 in a Compose.
+            # We need to manually handle this to keep heatmap aligned if needed.
+            if self.split == 'train' and random.random() < 0.7:
+                 # Morph expects tensor [C, H, W]
+                 img_tensor = self.morph(img_tensor)
+                 # Reconstruct 3 channels if it became 1 channel
+                 if img_tensor.shape[0] == 1:
+                     img_tensor = img_tensor.repeat(3, 1, 1)
 
-        # Final tensor
+            # Apply Geometric Transforms (Resize, Flip, Blur)
+            # Baseline: Resize -> Flip -> Blur(0.2)
+            img_tensor = TF.resize(img_tensor, [self.image_size, self.image_size], antialias=True)
+            
+            if self.use_heatmap:
+                heat_tensor = torch.from_numpy(heatmap_np).unsqueeze(0)
+                heat_tensor = TF.resize(heat_tensor, [self.image_size, self.image_size], interpolation=T.InterpolationMode.NEAREST)
+            else:
+                 heat_tensor = None
+            
+            if self.split == 'train':
+                # Gaussian Blur (p=0.4) - Increased prob for structure robustness
+                if random.random() < 0.4:
+                    img_tensor = T.GaussianBlur(3)(img_tensor)
+
+        # --- 2. Generic Medical Strategy (AutoAugment + RandomResizedCrop) ---
+        else:
+            # Baseline: RandomResizedCrop(0.6-1.0) -> Flip -> AutoAugment
+            # We need to implement RandomResizedCrop manually to sync heatmap
+            
+            if self.split == 'train':
+                # Random Resized Crop parameters
+                i, j, h, w = T.RandomResizedCrop.get_params(pil_img, scale=(0.6, 1.0), ratio=(3./4., 4./3.))
+                img_pil = TF.resized_crop(pil_img, i, j, h, w, size=(self.image_size, self.image_size))
+                
+                if self.use_heatmap:
+                    # Heatmap is float numpy array. Convert to Tensor/Image for cropping
+                    heat_tensor = torch.from_numpy(heatmap_np).unsqueeze(0)
+                    heat_tensor = TF.resized_crop(heat_tensor, i, j, h, w, size=(self.image_size, self.image_size), interpolation=T.InterpolationMode.NEAREST)
+                else:
+                    heat_tensor = None
+                
+                # Random Horizontal Flip
+                if random.random() < 0.5:
+                    img_pil = TF.hflip(img_pil)
+                    if self.use_heatmap: heat_tensor = TF.hflip(heat_tensor)
+                
+                # --- Strategy Branching based on Domain Knowledge ---
+                
+                # Group A: Color Sensitive (Retina/Pathology) -> Avoid heavy color distortion
+                # APTOS (Hemorrhages/Exudates rely on Red/Yellow), Oral (H&E Stain)
+                is_color_sensitive = 'aptos' in str(self.dataset_dir).lower() or 'oral' in str(self.dataset_dir).lower()
+                
+                if is_color_sensitive:
+                    # Use mild Color Jitter (Brightness/Contrast) but minimal Hue/Saturation change
+                    # Flip and RandomResizeCrop are still good for scale/position invariance
+                    if random.random() < 0.8:
+                        # Mild photometric noise
+                        img_pil = T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1, hue=0.01)(img_pil)
+                
+                # Group B: Structure/Texture Sensitive (Grayscale/X-Ray) -> Stronger distortions
+                # MIAS (Mammogram), OCTA (Vascular Network)
+                else:
+                    # AutoAugment (ImageNet Policy) is great for structure/texture diversity
+                    # It includes shear, translate, equalize, solarize which are good for robustness
+                    try:
+                        policy = T.AutoAugmentPolicy.IMAGENET
+                        img_pil = T.AutoAugment(policy)(img_pil)
+                    except:
+                        pass 
+                    
+                img_tensor = TF.to_tensor(img_pil)
+
+            else:
+                # Validation: Resize only
+                img_tensor = TF.to_tensor(pil_img)
+                img_tensor = TF.resize(img_tensor, [self.image_size, self.image_size], antialias=True)
+                
+                if self.use_heatmap:
+                    heat_tensor = torch.from_numpy(heatmap_np).unsqueeze(0)
+                    heat_tensor = TF.resize(heat_tensor, [self.image_size, self.image_size], interpolation=T.InterpolationMode.NEAREST)
+                else:
+                    heat_tensor = None
+
+        # Final concatenation
         if self.use_heatmap:
-            res = torch.cat([final_img, final_heat], dim=0)
+            res = torch.cat([img_tensor, heat_tensor], dim=0)
             res[:3] = self.normalize(res[:3])
         else:
-            res = self.normalize(final_img)
+            res = self.normalize(img_tensor)
             
         return res
 
@@ -334,6 +434,34 @@ def momentum_update(model_k, model_q, m=0.999):
     for param_k, param_q in zip(model_k.parameters(), model_q.parameters()):
         param_k.data = param_k.data * m + param_q.data * (1. - m)
 
+class FocalLoss(nn.Module):
+    def __init__(self, gamma=2.0, alpha=None, reduction='mean'):
+        super(FocalLoss, self).__init__()
+        self.gamma = gamma
+        self.alpha = alpha
+        self.reduction = reduction
+
+    def forward(self, logits, targets):
+        ce_loss = F.cross_entropy(logits, targets, reduction='none')
+        pt = torch.exp(-ce_loss)
+        focal_loss = ((1 - pt) ** self.gamma) * ce_loss
+
+        if self.alpha is not None:
+             # alpha weighting
+             if isinstance(self.alpha, (float, int)):
+                 alpha_t = self.alpha
+             else:
+                 alpha_t = self.alpha[targets]
+             focal_loss = alpha_t * focal_loss
+
+        if self.reduction == 'mean':
+            return focal_loss.mean()
+        elif self.reduction == 'sum':
+            return focal_loss.sum()
+        else:
+            return focal_loss
+
+
 def compute_contrastive_loss(features, labels, queue, prototypes, temperature=0.07):
     # Simplified BPaCo/MoCo Loss against Prototypes
     # features: [B, Dim] (Query)
@@ -421,6 +549,15 @@ class BPaCoHeatmapTrainer:
         self.class_freq = torch.zeros(self.num_classes).to(self.device)
         for s in self.train_dataset.samples:
              self.class_freq[s[1]] += 1
+             
+        # Main Classification Criterion
+        if args.focal_gamma > 0.0:
+            print(f"Using Focal Loss with gamma={args.focal_gamma}")
+            self.criterion_ce = FocalLoss(gamma=args.focal_gamma)
+        else:
+            print(f"Using Standard Cross Entropy (Logit Compensation: tau={args.tau})")
+            self.criterion_ce = None
+
 
     def run(self):
         train_loader = DataLoader(self.train_dataset, batch_size=self.args.batch_size, shuffle=True, num_workers=4)
@@ -449,7 +586,19 @@ class BPaCoHeatmapTrainer:
                 logits = self.classifier(feat_cat)
                 
                 # Loss
-                loss_ce = cross_entropy_with_logit_compensation(logits, labels, self.class_freq, tau=self.args.tau)
+                # Logit Compensation Pre-processing
+                if self.args.tau > 0 and self.class_freq is not None:
+                      prior = self.class_freq / self.class_freq.sum()
+                      log_prior = torch.log(prior + 1e-8).to(logits.device)
+                      final_logits = logits + self.args.tau * log_prior
+                else:
+                      final_logits = logits
+
+                if self.criterion_ce is not None:
+                     loss_ce = self.criterion_ce(final_logits, labels)
+                else:
+                     loss_ce = cross_entropy_with_logit_compensation(logits, labels, self.class_freq, tau=self.args.tau)
+
                 loss_con = compute_contrastive_loss(z_q, labels, self.queue, self.C1, temperature=self.args.temperature)
                 
                 loss = loss_ce + self.args.beta * loss_con
@@ -632,6 +781,7 @@ if __name__ == '__main__':
     parser.add_argument('--sigma', type=int, default=30)
     parser.add_argument('--beta', type=float, default=2.0)
     parser.add_argument('--tau', type=float, default=1.0)
+    parser.add_argument('--focal-gamma', type=float, default=2.0, help="Gamma for Focal Loss")
     parser.add_argument('--temperature', type=float, default=0.1)
     parser.add_argument('--queue-size', type=int, default=8192)
     parser.add_argument('--val-interval', type=int, default=1)

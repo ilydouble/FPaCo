@@ -77,13 +77,10 @@ cd bpaco_original
 bash run_bpaco_reproduced.sh
 ```
 
-### 9. Multimodal B-PaCo Heatmap
+### 9. FPaCo-NoHeat (B-PaCo Reduced)
 ```bash
-cd multimodal_classification
-# 自动调参运行
-bash run_heatmap_tuning.sh
-# 或单次训练
-python train_bpaco_heatmap.py --dataset ...
+cd fpaco_noheat
+bash run_fpaco_noheat.sh
 ```
 
 ---

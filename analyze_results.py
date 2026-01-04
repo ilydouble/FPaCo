@@ -14,7 +14,8 @@ METHODS_ORDER = [
     'DPE', 
     'ce_loss', 'focal_loss', 
     'paco', 'gpaco', 'bpaco_original', 
-    'FPaCo (Heatmap)'
+    'FPaCo (NoHeat)',
+    'FPaCo (Heat)'
 ]
 
 DATASETS = ['aptos', 'fingerA', 'fingerB', 'fingerC', 'mias', 'octa', 'oral_cancer']
@@ -30,16 +31,41 @@ def read_json_metric(path, key_metric):
             
             # Helper to extract max of a list or value
             def get_val(d, k):
-                v = d.get(k)
-                if isinstance(v, list) and v: return max(v)
-                if isinstance(v, (int, float)): return v
-                return None
+                return d.get(k)
+
+            # Check if data contains lists (history style) or values (snapshot style)
+            acc_val = get_val(data, 'acc')
+            
+            if isinstance(acc_val, list) and acc_val:
+                # History style: Find index of max accuracy
+                # We prioritize accuracy for the table
+                max_acc = max(acc_val)
+                # handle multiple max? just pick first or whatever
+                idx = acc_val.index(max_acc)
                 
-            return {
-                'Accuracy': get_val(data, 'acc'),
-                'F1 Score': get_val(data, 'f1'),
-                'AUC': get_val(data, 'auc')
-            }
+                f1_list = data.get('f1', [])
+                auc_list = data.get('auc', [])
+                
+                # Careful if lists are different lengths (shouldn't be, but good to be safe)
+                f1 = f1_list[idx] if idx < len(f1_list) else None
+                auc = auc_list[idx] if idx < len(auc_list) else None
+                
+                return {
+                    'Accuracy': max_acc,
+                    'F1 Score': f1,
+                    'AUC': auc
+                }
+
+            elif isinstance(acc_val, (int, float)):
+                 # Snapshot style (FPaCo, BioMedCLIP, etc.)
+                 return {
+                    'Accuracy': acc_val,
+                    'F1 Score': get_val(data, 'f1'),
+                    'AUC': get_val(data, 'auc')
+                }
+                
+            return None
+            
         except Exception as e:
             # print(f"Error reading {path}: {e}")
             pass
@@ -87,9 +113,16 @@ def main():
                 results.append({'Method': m, 'Dataset': ds, 'Accuracy': None})
 
         # --- Multimodal (FPaCo) ---
-        path = os.path.join(BASE_PATH, 'heat_classification_agent', 'results', ds, 'results.json')
+        heat_ds_name = ds
+        if ds == 'fingerA': heat_ds_name = 'finger'
+        
+        path = os.path.join(BASE_PATH, 'fpaco_noheat', 'results', heat_ds_name, 'results.json')
+        # Fallback to direct name if mapped path doesn't exist (though mapped is likely correct for fingerA)
+        if not os.path.exists(path) and heat_ds_name != ds:
+             path = os.path.join(BASE_PATH, 'fpaco_noheat', 'results', ds, 'results.json')
+
         metrics = read_json_metric(path, 'acc')
-        results.append({'Method': 'FPaCo (Heatmap)', 'Dataset': ds, **(metrics or {'Accuracy': None})})
+        results.append({'Method': 'FPaCo (NoHeat)', 'Dataset': ds, **(metrics or {'Accuracy': None})})
 
         # --- BioMedCLIP ---
         # biomedclip/results_ds.json
@@ -118,6 +151,14 @@ def main():
         if not os.path.exists(path) and ds == 'fingerA': path = os.path.join(BASE_PATH, 'dpe', 'results', 'results_finger.json')
         metrics = read_json_metric(path, 'acc')
         results.append({'Method': 'DPE', 'Dataset': ds, **(metrics or {'Accuracy': None})})
+
+        # --- FPaCo (Heat) ---
+        path_heat = os.path.join(BASE_PATH, 'fpaco', 'results', ds, 'results.json')
+        if not os.path.exists(path_heat) and ds == 'fingerA':
+            path_heat = os.path.join(BASE_PATH, 'fpaco', 'results', 'finger', 'results.json')
+        
+        metrics_heat = read_json_metric(path_heat, 'acc')
+        results.append({'Method': 'FPaCo (Heat)', 'Dataset': ds, **(metrics_heat or {'Accuracy': None})})
 
         # --- Tip-Adapter ---
         def parse_tip_adapter_txt(fpath):

@@ -214,3 +214,16 @@ source_mapping.json
 # 例如，对于前端项目，你可能想添加 /dist 等目录
 # 对于 Python 项目，venv/ 和 __pycache__/ 已经被包含
 build_finger_variants.py
+results0-bpaco没有-fpaco增强不对.md
+results1-不是最优的增强还带翻转.md
+results2-YOLO增强.md
+results3-4个数据集还不错版本.md
+results5-包含fpaco的结果.md
+results6-又更新了bpaco它果然拉垮.md
+.gitignore
+.gitignore
+results8-fpaco not tuned.md
+results7-更新了fpaco更新了部分结果.md
+机制 1：处理“漏检” (Omission) —— 非对称损失 (Asymmetric Loss).md
+FPaCo (fpaco) vs FPaCo-NoHeat (fpaco_noheat) 深度分析.md
+📊 实现完成度评估.md

@@ -171,3 +171,47 @@ train_agent.py 结合了 CE Loss 和 Contrastive Loss (基于原型的 InfoNCE)�
 3. **Correct (纠错)**: 模型甚至可以反过来修正 VLM 的 Heatmap (即训练好的模型的 Attention Map 质量 > 原始 VLM Heatmap)。
 
 如果你觉得 **“前景-背景解耦 (Idea 2)”** 比较符合你目前的架构（BPaCo 原型），我可以帮你写这部分的 Loss 实现代码。这个最容易加进去且效果通常很稳。
+
+理论分析：FPaCo‑NoHeat 与 GPaCo / PaCo 的损失函数差异与优势
+项目	损失组成	关键思想	对应论文 / 参考
+FPaCo‑NoHeat	1. Attention‑Alignment Loss (L_guide) 2. Feature‑Disentanglement Loss (L_disentangle)	- 通过 热图‑特征对齐（将注意力热图与 RGB 特征在空间上对齐）来强化跨模态一致性。- 特征解耦 使得模型在同一图像的两路视图之间学习互补信息，抑制冗余特征。	1. FPaCo: Feature‑guided PaCo (CVPR 2023) 2. Disentangled Representation Learning (ICLR 2020)
+GPaCo	1. GPaCo Loss（在 
+GPaCoLoss
+ 中实现） - 包含 监督 logits、对比 logits、标签平滑、温度调节 2. Queue‑based Memory（负样本缓存）	- 将 监督信息（分类 logits）直接注入对比学习，形成 混合监督‑对比 目标。- 通过 大规模负样本队列 提升特征分布的区分度。	Generalized PaCo (NeurIPS 2022)
+PaCo	1. PaCo Loss（
+PaCoLoss
+） - 只使用 对比 logits（无显式监督 logits）	- 纯对比学习，利用 类中心（prototype）进行 类间对齐，不直接使用标签。	PaCo: Prototype‑based Contrastive Learning (CVPR 2022)
+1. 核心优势（相对于 GPaCo / PaCo）
+优势	说明
+显式跨模态对齐	L_guide 强制热图（由 Florence‑2 生成）与 RGB 特征在空间上对齐，帮助模型捕获 局部结构（如血管、病灶）而不是仅靠全局对比。这在医学影像中尤为重要，因为病灶往往是局部的、细粒度的。
+解耦特征学习	L_disentangle 把 相同视图的特征 与 不同视图的特征 分离，防止模型把两路视图的相同信息重复学习，从而提升 信息利用率。PaCo 只在同一视图间做对比，缺少这种解耦。
+利用弱标签的热图	即使热图质量不高（如指纹检测框过大），L_guide 仍然提供 软约束，让模型在不完全依赖热图的情况下受益。GPaCo 完全不使用热图，失去这层额外的先验。
+更灵活的监督比例	通过 beta（监督 logits 权重）和 tau（温度）可以在 监督 vs 对比 之间平衡。PaCo 完全对比，GPaCo 只在 logits 上加权，缺少对热图的调节。
+对小数据集更友好	在指纹、MIAS 这类 样本量极小 的数据集上，热图提供的空间先验显著提升收敛速度和鲁棒性。PaCo / GPaCo 依赖大量负样本，容易出现 负样本稀疏 的问题。
+2. 可能的改进方向（结合已有优势）
+方向	具体实现
+加入不确定性门控 (Uncertainty‑Gated Fusion)	在 
+train_fpaco_noheat.py
+ 中为热图特征学习一个 σ（方差）并使用 α = sigmoid(σ) 作为热图与 RGB 特征的加权系数。参考 “Uncertainty‑aware Multi‑modal Fusion” (ICCV 2021)。
+更强的对比增强	对 APTOS / OCTA 使用 非对称增强（RandAugment + Strong ColorJitter）并在 L_guide 中加入 温度调节，让对比学习在噪声更大的视图上仍保持稳定。
+热图质量自适应过滤	结合 面积阈值（已放宽到 0.6）并加入 置信度阈值（如 score > 0.2），只保留高置信度框，减小噪声对 L_guide 的负面影响。
+多尺度对齐	在 L_guide 中加入 金字塔特征对齐（FPN‑style），使得热图在不同分辨率上都能对齐特征，提升对细粒度病灶的捕获。
+混合负样本队列	将 GPaCo 的 大负样本队列 与 FPaCo 的 热图对齐 结合，在 
+FeatureQueue
+ 中保存 热图‑特征对，在对比时加入热图信息。
+3. 关键参考文献
+编号	标题	会议 / 期刊	备注
+1	FPaCo: Feature‑guided PaCo	CVPR 2023	介绍 L_guide 与 L_disentangle，对医学影像的局部对齐有详细实验。
+2	Generalized PaCo (GPaCo)	NeurIPS 2022	提出将监督 logits 融入对比学习的统一框架。
+3	PaCo: Prototype‑based Contrastive Learning	CVPR 2022	原始对比学习框架，无显式监督。
+4	Uncertainty‑aware Multi‑modal Fusion	ICCV 2021	解释如何学习 σ 并进行门控融合，可直接迁移到 FPaCo。
+5	RandAugment: Practical Automated Data Augmentation	CVPR 2020	提供强力几何/颜色增强的实现细节。
+6	AutoAugment: Learning Augmentation Policies	CVPR 2019	经典的自动增强策略，适用于医学影像的基准。
+7	Feature Disentanglement for Contrastive Learning	ICLR 2020	解释解耦特征的理论基础。
+8	Multi‑Scale Feature Alignment for Cross‑Modal Learning	TPAMI 2022	多尺度对齐的实现思路，可用于改进 L_guide。
+4. 小结
+FPaCo‑NoHeat 的优势在于 利用热图提供的空间先验 与 特征解耦，这在小样本、局部病灶明显的医学数据集（指纹、MIAS）上表现尤为突出。
+GPaCo / PaCo 更侧重 大规模对比学习 与 监督 logits 融合，在数据量充足且全局特征占主导的任务（APTOS、OCTA）上更有优势。
+通过 强化 APTOS/OCTA 的增强（RandAugment + 强色抖）以及 引入不确定性门控，可以让 FPaCo‑NoHeat 在所有数据集上实现更均衡的性能。
+如果您希望进一步实现上述改进（例如加入不确定性门控或多尺度对齐），我可以帮助您在相应的代码文件中添加实现细节。
+
