@@ -591,7 +591,7 @@ class BPaCoHeatmapTrainer:
                 if self.args.tau > 0 and self.class_freq is not None:
                       prior = self.class_freq / self.class_freq.sum()
                       log_prior = torch.log(prior + 1e-8).to(logits.device)
-                      final_logits = logits + self.args.tau * log_prior
+                      final_logits = logits - self.args.tau * log_prior
                 else:
                       final_logits = logits
 
