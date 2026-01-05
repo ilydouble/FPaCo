@@ -49,11 +49,11 @@ def generate_detections(dataset_dir, output_dir=None, model_id='microsoft/Floren
 
     # Prompt Map
     PROMPT_MAP = {
-        'octa': 'locate dark void zones (non-perfusion), tangled bright vessels (CNV), and distorted vessel loops',
-        'finger':'fingerprint core, fingerprint delta, fingerprint whorl, fingerprint loop, fingerprint arch',
-        'mias': 'mass, benign mass, malignant mass, calcification, architectural distortion, spiculated mass, white spot, density',
-        'aptos': 'locate small red dots of microaneurysm, red hemorrhage, and yellow hard exudates',
-        'oral': 'oral squamous cell carcinoma, cancer cells, atypical cells, keratin pearls'
+        'octa': 'The Foveal Avascular Zone (FAZ), a dark, avascular region located at the geometric center of the retinal vessel network.',
+        'finger': 'The fingerprint Core point (top of the innermost loop) and the Delta point (triangular ridge intersection).',
+        'mias': 'High-density breast mass regions or clusters of tiny bright microcalcifications.',
+        'aptos': 'Diabetic Retinopathy lesions, including red hemorrhages/microaneurysms and bright yellow hard exudates.',
+        'oral': 'Pathological regions showing keratin pearls or invading nests of squamous epithelial cells.'
     }
     
     # Determine prompt based on dataset name
