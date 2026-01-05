@@ -11,13 +11,13 @@ export CUDA_VISIBLE_DEVICES=0
 
 # Hyperparams
 EPOCHS=100
-LR=0.005
+LR=0.001
 BATCH_SIZE=32
-IMAGE_SIZE=448
+IMAGE_SIZE=512
 BACKBONE="resnet18"
-BETA=1.0
-TAU=0.1
-SIGMA=20
+BETA=2.0
+TAU=0.0
+SIGMA=50
 QUEUE_SIZE=8192
 FOCAL_GAMMA=2.0
 # Optional: Set to "--combine-train-val" to merge datasets for final training
@@ -28,22 +28,25 @@ echo "=========================================================="
 echo "Starting FPaCo Advanced (Attention Alignment + Disentanglement) Experiments"
 echo "=========================================================="
 
-# 1. MIAS
-echo "[1/5] Training on MIAS..."
-python train_fpaco.py \
-    --dataset "$WORKSPACE/datasets/mias_classification_dataset" \
-    --output-dir "$RESULTS_ROOT/mias" \
-    --epochs $EPOCHS \
-    --lr $LR \
-    --batch-size $BATCH_SIZE \
-    --image-size $IMAGE_SIZE \
-    --backbone $BACKBONE \
-    --beta $BETA \
-    --tau $TAU \
-    --sigma $SIGMA \
-    --queue-size $QUEUE_SIZE \
-    --focal-gamma $FOCAL_GAMMA \
-    $COMBINE_FLAG
+# # 1. MIAS
+# echo "[1/5] Training on MIAS..."
+# python train_fpaco.py \
+#     --dataset "$WORKSPACE/datasets/mias_classification_dataset" \
+#     --output-dir "$RESULTS_ROOT/mias" \
+#     --epochs $EPOCHS \
+#     --lr $LR \
+#     --batch-size $BATCH_SIZE \
+#     --image-size $IMAGE_SIZE \
+#     --backbone $BACKBONE \
+#     --beta $BETA \
+#     --tau $TAU \
+#     --sigma $SIGMA \
+#     --queue-size $QUEUE_SIZE \
+#     --focal-gamma $FOCAL_GAMMA \
+#     --lambda-fg 0.1 \
+#     --lambda-bg 0.0 \
+#     --max-alpha 0.95 \
+#     $COMBINE_FLAG
 
 # # 2. OralCancer
 # echo "[2/5] Training on OralCancer..."
@@ -61,7 +64,7 @@ python train_fpaco.py \
 #     --queue-size $QUEUE_SIZE \
 #     $COMBINE_FLAG
 
-3. APTOS
+#3. APTOS
 echo "[3/5] Training on APTOS..."
 python train_fpaco.py \
     --dataset "$WORKSPACE/datasets/aptos_classification_dataset" \
@@ -76,6 +79,9 @@ python train_fpaco.py \
     --sigma $SIGMA \
     --queue-size $QUEUE_SIZE \
     --focal-gamma $FOCAL_GAMMA \
+    --lambda-fg 0.1 \
+    --lambda-bg 0.0 \
+    --max-alpha 0.95 \
     $COMBINE_FLAG
 
 4. Fingerprint A
@@ -90,9 +96,12 @@ python train_fpaco.py \
     --backbone $BACKBONE \
     --beta $BETA \
     --tau $TAU \
-    --sigma $SIGMA \
+    --sigma 20 \
     --queue-size $QUEUE_SIZE \
     --focal-gamma $FOCAL_GAMMA \
+    --lambda-fg 2.0 \
+    --lambda-bg 0.05 \
+    --max-alpha 0.5 \
     $COMBINE_FLAG
 
 # 4. Fingerprint B
@@ -107,9 +116,12 @@ python train_fpaco.py \
     --backbone $BACKBONE \
     --beta $BETA \
     --tau $TAU \
-    --sigma $SIGMA \
+    --sigma 20\
     --queue-size $QUEUE_SIZE \
     --focal-gamma $FOCAL_GAMMA \
+    --lambda-fg 2.0 \
+    --lambda-bg 0.05 \
+    --max-alpha 0.5 \
     $COMBINE_FLAG
 
 # 4. Fingerprint C
@@ -124,9 +136,12 @@ python train_fpaco.py \
     --backbone $BACKBONE \
     --beta $BETA \
     --tau $TAU \
-    --sigma $SIGMA \
+    --sigma 20 \
     --queue-size $QUEUE_SIZE \
     --focal-gamma $FOCAL_GAMMA \
+    --lambda-fg 2.0 \
+    --lambda-bg 0.05 \
+    --max-alpha 0.5 \
     $COMBINE_FLAG
 
 5. OCTA
@@ -144,6 +159,9 @@ python train_fpaco.py \
     --sigma $SIGMA \
     --queue-size $QUEUE_SIZE \
     --focal-gamma $FOCAL_GAMMA \
+    --lambda-fg 0.5 \
+    --lambda-bg 0.0 \
+    --max-alpha 0.5 \
     $COMBINE_FLAG
 
 echo "=========================================================="
