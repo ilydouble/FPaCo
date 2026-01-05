@@ -539,15 +539,27 @@ def momentum_update(model_k, model_q, m=0.999):
         param_k.data = param_k.data * m + param_q.data * (1. - m)
 
 def compute_contrastive_loss(features, labels, queue, prototypes, temperature=0.07):
-    logits_proto = torch.matmul(features, prototypes.T) / temperature
-    loss = F.cross_entropy(logits_proto, labels)
+    # 1. Similarity with Prototypes (Positives + Class Negatives) => [B, Num_Classes]
+    logits_proto = torch.matmul(features, prototypes.T)
+    
+    # 2. Similarity with Queue (Negatives) => [B, Queue_Size]
+    logits_queue = torch.matmul(features, queue.queue.clone().detach().T)
+    
+    # 3. Combine: Denominator = exp(Proto_Pos) + sum(exp(Proto_Neg)) + sum(exp(Queue_Neg))
+    # Concatenate along class dimension
+    logits = torch.cat([logits_proto, logits_queue], dim=1) / temperature
+    
+    # F.cross_entropy will handle the log-softmax. 
+    # Since labels are in [0, Num_Classes-1], they naturally match the 'logits_proto' part.
+    # The 'logits_queue' part merely adds more negatives to the denominator.
+    loss = F.cross_entropy(logits, labels)
     return loss
 
 def cross_entropy_with_logit_compensation(logits, targets, class_freq, tau=1.0):
     if class_freq is None: return F.cross_entropy(logits, targets)
     prior = class_freq / class_freq.sum()
     log_prior = torch.log(prior + 1e-8).to(logits.device)
-    adjusted_logits = logits + tau * log_prior
+    adjusted_logits = logits - tau * log_prior
     return F.cross_entropy(adjusted_logits, targets)
 
 # =========================================================
@@ -625,15 +637,15 @@ class FPaCoTrainer:
 
                 # --- Fallback Strategy (Pre-Forward): If VLM gives no attention, use WHOLE IMAGE ---
                 # Check per sample: if sum(heatmap) is effectively 0
-                if self.use_heatmap:
-                    heat_channel = v1[:, 3:4, :, :] 
-                    heat_sums = heat_channel.view(v1.size(0), -1).sum(dim=1)
-                    empty_mask = (heat_sums < 1e-6).view(-1, 1, 1, 1) # [B, 1, 1, 1]
+                # if self.use_heatmap:
+                #     heat_channel = v1[:, 3:4, :, :] 
+                #     heat_sums = heat_channel.view(v1.size(0), -1).sum(dim=1)
+                #     empty_mask = (heat_sums < 1e-6).view(-1, 1, 1, 1) # [B, 1, 1, 1]
                     
-                    if empty_mask.any():
-                        # Modify v1 IN-PLACE before Forward Pass
-                        # This generates a new version of the tensor but before it's used in computation graph
-                        v1[:, 3:4, :, :] = torch.where(empty_mask, torch.ones_like(heat_channel), heat_channel)
+                #     if empty_mask.any():
+                #         # Modify v1 IN-PLACE before Forward Pass
+                #         # This generates a new version of the tensor but before it's used in computation graph
+                #         v1[:, 3:4, :, :] = torch.where(empty_mask, torch.ones_like(heat_channel), heat_channel)
                 
                 # Input v1 is 4-ch. Extract heatmap (Channel 3) - AFTER Fallback modification
                 if self.use_heatmap:
@@ -664,17 +676,7 @@ class FPaCoTrainer:
                 else:
                       final_logits = logits
 
-                if self.criterion_ce is not None:
-                     loss_ce = self.criterion_ce(final_logits, labels)
-                else:
-                     # Fallback if criterion_ce is None (though we set it to None above only if gamma<=0, 
-                     # but here we want to use standard CE if gamma<=0. 
-                     # Wait, previous logic was: if gamma>0 use Focal, else use helper function.
-                     # Helper function `cross_entropy_with_logit_compensation` DOES the adjustment internally.
-                     # So if criterion_ce Is None, we call the helper.
-                     # If criterion_ce IS FocalLoss, we need to do adjustment manually here.
-                     pass 
-                
+
                 if self.criterion_ce is not None:
                      loss_ce = self.criterion_ce(final_logits, labels)
                 else:

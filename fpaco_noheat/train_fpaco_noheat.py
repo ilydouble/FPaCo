@@ -463,19 +463,20 @@ class FocalLoss(nn.Module):
 
 
 def compute_contrastive_loss(features, labels, queue, prototypes, temperature=0.07):
-    # Simplified BPaCo/MoCo Loss against Prototypes
-    # features: [B, Dim] (Query)
-    # prototypes: [NumClasses, Dim]
+    # 1. Similarity with Prototypes (Positives + Class Negatives) => [B, Num_Classes]
+    logits_proto = torch.matmul(features, prototypes.T)
     
-    # Positive logits: Query * Prototype(Label)
-    # Negative logits: Query * Other Prototypes + Query * Queue
+    # 2. Similarity with Queue (Negatives) => [B, Queue_Size]
+    logits_queue = torch.matmul(features, queue.queue.clone().detach().T)
     
-    # Simple implementation: InfoNCE with Prototypes as positives
+    # 3. Combine: Denominator = exp(Proto_Pos) + sum(exp(Proto_Neg)) + sum(exp(Queue_Neg))
+    # Concatenate along class dimension
+    logits = torch.cat([logits_proto, logits_queue], dim=1) / temperature
     
-    # 1. Similarity with Prototypes
-    logits_proto = torch.matmul(features, prototypes.T) / temperature # [B, n_cls]
-    
-    loss = F.cross_entropy(logits_proto, labels)
+    # F.cross_entropy will handle the log-softmax. 
+    # Since labels are in [0, Num_Classes-1], they naturally match the 'logits_proto' part.
+    # The 'logits_queue' part merely adds more negatives to the denominator.
+    loss = F.cross_entropy(logits, labels)
     return loss
 
 def cross_entropy_with_logit_compensation(logits, targets, class_freq, tau=1.0):
@@ -484,7 +485,7 @@ def cross_entropy_with_logit_compensation(logits, targets, class_freq, tau=1.0):
         
     prior = class_freq / class_freq.sum()
     log_prior = torch.log(prior + 1e-8).to(logits.device)
-    adjusted_logits = logits + tau * log_prior
+    adjusted_logits = logits - tau * log_prior
     return F.cross_entropy(adjusted_logits, targets)
 
 # =========================================================
@@ -597,8 +598,9 @@ class BPaCoHeatmapTrainer:
                 if self.criterion_ce is not None:
                      loss_ce = self.criterion_ce(final_logits, labels)
                 else:
+                     # Use final_logits which already includes compensation
                      loss_ce = cross_entropy_with_logit_compensation(logits, labels, self.class_freq, tau=self.args.tau)
-
+                     
                 loss_con = compute_contrastive_loss(z_q, labels, self.queue, self.C1, temperature=self.args.temperature)
                 
                 loss = loss_ce + self.args.beta * loss_con
@@ -775,12 +777,12 @@ if __name__ == '__main__':
     parser.add_argument('--output-dir', type=str, default='results')
     parser.add_argument('--epochs', type=int, default=50)
     parser.add_argument('--batch-size', type=int, default=32)
-    parser.add_argument('--lr', type=float, default=0.005)
+    parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--backbone', type=str, default='resnet18')
-    parser.add_argument('--image-size', type=int, default=224) # Resized for 4-channel
+    parser.add_argument('--image-size', type=int, default=448) # Resized for 4-channel
     parser.add_argument('--sigma', type=int, default=30)
-    parser.add_argument('--beta', type=float, default=2.0)
-    parser.add_argument('--tau', type=float, default=1.0)
+    parser.add_argument('--beta', type=float, default=1.5)
+    parser.add_argument('--tau', type=float, default=0.5)
     parser.add_argument('--focal-gamma', type=float, default=2.0, help="Gamma for Focal Loss")
     parser.add_argument('--temperature', type=float, default=0.1)
     parser.add_argument('--queue-size', type=int, default=8192)
