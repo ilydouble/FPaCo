@@ -7,7 +7,7 @@ import cv2
 import glob
 
 # Inline the heatmap generation function to avoid import/tensor issues
-def generate_gaussian_heatmap(h, w, boxes, scores=None, sigma=15):
+def generate_gaussian_heatmap(h, w, boxes, scores=None, sigma=None):
     heatmap = np.zeros((h, w), dtype=np.float32)
     if len(boxes) == 0:
         return heatmap
@@ -17,6 +17,12 @@ def generate_gaussian_heatmap(h, w, boxes, scores=None, sigma=15):
     for i, box in enumerate(boxes):
         x1, y1, x2, y2 = box
         cx, cy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+        w_box = max(x2 - x1, 1.0)
+        h_box = max(y2 - y1, 1.0)
+        
+        # Adaptive Sigma: ~ 1/4 of dimension
+        sigma_x = max(w_box / 1.0, 2.0)
+        sigma_y = max(h_box / 1.0, 2.0)
         
         if scores is not None:
              # Handle both tensor and float
@@ -26,10 +32,9 @@ def generate_gaussian_heatmap(h, w, boxes, scores=None, sigma=15):
         else:
             score = 1.0
         
-        # Distance squared to center
-        dist_sq = (xx - cx)**2 + (yy - cy)**2
-        # Gaussian blob
-        blob = np.exp(-dist_sq / (2 * sigma**2))
+        # Elliptical Gaussian
+        exponent = -((xx - cx)**2 / (2 * sigma_x**2) + (yy - cy)**2 / (2 * sigma_y**2))
+        blob = np.exp(exponent)
         
         # Aggregate using maximum
         heatmap = np.maximum(heatmap, blob * score)
