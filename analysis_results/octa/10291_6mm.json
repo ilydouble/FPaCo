@@ -1,0 +1,83 @@
+[
+  {
+    "box_2d": [
+      0.136,
+      0.0,
+      0.998,
+      0.42
+    ],
+    "label": "capillary_non_perfusion"
+  },
+  {
+    "box_2d": [
+      0.0,
+      0.0,
+      0.398,
+      0.998
+    ],
+    "label": "capillary_non_perfusion"
+  },
+  {
+    "box_2d": [
+      0.593,
+      0.0,
+      0.998,
+      0.998
+    ],
+    "label": "capillary_non_perfusion"
+  },
+  {
+    "box_2d": [
+      0.0,
+      0.595,
+      0.998,
+      0.998
+    ],
+    "label": "capillary_non_perfusion"
+  },
+  {
+    "box_2d": [
+      0.0,
+      0.0,
+      0.12,
+      0.998
+    ],
+    "label": "capillary_non_perfusion"
+  },
+  {
+    "box_2d": [
+      0.91,
+      0.0,
+      0.998,
+      0.998
+    ],
+    "label": "capillary_non_perfusion"
+  },
+  {
+    "box_2d": [
+      0.0,
+      0.92,
+      0.998,
+      0.998
+    ],
+    "label": "capillary_non_perfusion"
+  },
+  {
+    "box_2d": [
+      0.0,
+      0.0,
+      0.998,
+      0.08
+    ],
+    "label": "capillary_non_perfusion"
+  },
+  {
+    "box_2d": [
+      0.421,
+      0.433,
+      0.551,
+      0.541
+    ],
+    "label": "FAZ"
+  }
+]

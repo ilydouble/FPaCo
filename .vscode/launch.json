@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Fingerprint Analyzer",
+      "type": "python",
+      "request": "launch",
+      "program": "E:/Machine/ICPR/FpaCo/FPaCo-main/fingerprint_gemini_analyzer.py",
+      "console": "integratedTerminal",
+      "env": {
+        "YUNWU_API_KEY": "sk-MMYsofFQTY4whxwi48CVX0aCn8j9GVuAmDSol4UUjhLr10jD"
+      },
+      "args": [
+        "--image-dir",
+        "datasets/fingerprint_classification_dataset/test/class_0",
+        "--output-dir",
+        "analysis_results/test/class_0"
+      ]
+    }
+  ]
+}

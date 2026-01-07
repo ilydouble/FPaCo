@@ -1,0 +1,65 @@
+[
+  {
+    "box_2d": [
+      0.083,
+      0.378,
+      0.233,
+      0.585
+    ],
+    "label": "Optic Disc"
+  },
+  {
+    "box_2d": [
+      0.588,
+      0.347,
+      0.601,
+      0.36
+    ],
+    "label": "Microaneurysms"
+  },
+  {
+    "box_2d": [
+      0.686,
+      0.406,
+      0.699,
+      0.42
+    ],
+    "label": "Microaneurysms"
+  },
+  {
+    "box_2d": [
+      0.748,
+      0.288,
+      0.76,
+      0.3
+    ],
+    "label": "Microaneurysms"
+  },
+  {
+    "box_2d": [
+      0.538,
+      0.648,
+      0.55,
+      0.66
+    ],
+    "label": "Microaneurysms"
+  },
+  {
+    "box_2d": [
+      0.648,
+      0.705,
+      0.66,
+      0.717
+    ],
+    "label": "Microaneurysms"
+  },
+  {
+    "box_2d": [
+      0.806,
+      0.555,
+      0.82,
+      0.569
+    ],
+    "label": "Hemorrhages"
+  }
+]

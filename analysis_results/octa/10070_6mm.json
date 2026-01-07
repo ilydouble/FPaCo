@@ -1,0 +1,47 @@
+[
+  {
+    "box_2d": [
+      0.413,
+      0.421,
+      0.609,
+      0.594
+    ],
+    "label": "FAZ"
+  },
+  {
+    "box_2d": [
+      0.621,
+      0.323,
+      0.791,
+      0.581
+    ],
+    "label": "capillary non-perfusion"
+  },
+  {
+    "box_2d": [
+      0.018,
+      0.013,
+      0.398,
+      0.388
+    ],
+    "label": "capillary non-perfusion"
+  },
+  {
+    "box_2d": [
+      0.638,
+      0.729,
+      0.982,
+      0.998
+    ],
+    "label": "capillary non-perfusion"
+  },
+  {
+    "box_2d": [
+      0.647,
+      0.013,
+      0.982,
+      0.294
+    ],
+    "label": "capillary non-perfusion"
+  }
+]

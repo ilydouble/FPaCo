@@ -1,0 +1,16 @@
+{
+  "roiAnalysis": {
+    "regions": [
+      {
+        "regionType": "Calcification",
+        "bbox": [
+          0.428,
+          0.311,
+          0.481,
+          0.553
+        ],
+        "confidence": 0.95
+      }
+    ]
+  }
+}

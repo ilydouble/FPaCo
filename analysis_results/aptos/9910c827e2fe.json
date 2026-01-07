@@ -1,0 +1,15 @@
+{
+  "microaneurysms": [],
+  "hemorrhages": [],
+  "exudates": [],
+  "optic_disc": [
+    {
+      "box_2d": [
+        0.071,
+        0.361,
+        0.235,
+        0.561
+      ]
+    }
+  ]
+}

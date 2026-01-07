@@ -1,0 +1,145 @@
+{
+  "boxes": [
+    {
+      "box_2d": [
+        0.755,
+        0.379,
+        0.905,
+        0.581
+      ],
+      "label": "Optic Disc"
+    },
+    {
+      "box_2d": [
+        0.495,
+        0.125,
+        0.605,
+        0.211
+      ],
+      "label": "Exudates"
+    },
+    {
+      "box_2d": [
+        0.703,
+        0.697,
+        0.791,
+        0.781
+      ],
+      "label": "Exudates"
+    },
+    {
+      "box_2d": [
+        0.181,
+        0.839,
+        0.281,
+        0.901
+      ],
+      "label": "Exudates"
+    },
+    {
+      "box_2d": [
+        0.558,
+        0.857,
+        0.632,
+        0.917
+      ],
+      "label": "Exudates"
+    },
+    {
+      "box_2d": [
+        0.425,
+        0.425,
+        0.492,
+        0.561
+      ],
+      "label": "Exudates"
+    },
+    {
+      "box_2d": [
+        0.458,
+        0.281,
+        0.642,
+        0.361
+      ],
+      "label": "Hemorrhages"
+    },
+    {
+      "box_2d": [
+        0.328,
+        0.217,
+        0.368,
+        0.251
+      ],
+      "label": "Hemorrhages"
+    },
+    {
+      "box_2d": [
+        0.495,
+        0.625,
+        0.523,
+        0.651
+      ],
+      "label": "Hemorrhages"
+    },
+    {
+      "box_2d": [
+        0.638,
+        0.441,
+        0.658,
+        0.461
+      ],
+      "label": "Microaneurysms"
+    },
+    {
+      "box_2d": [
+        0.583,
+        0.511,
+        0.601,
+        0.531
+      ],
+      "label": "Microaneurysms"
+    },
+    {
+      "box_2d": [
+        0.398,
+        0.671,
+        0.418,
+        0.691
+      ],
+      "label": "Microaneurysms"
+    },
+    {
+      "box_2d": [
+        0.298,
+        0.311,
+        0.338,
+        0.341
+      ],
+      "label": "Microaneurysms"
+    },
+    {
+      "box_2d": [
+        0.408,
+        0.381,
+        0.428,
+        0.401
+      ],
+      "label": "Microaneurysms"
+    },
+    {
+      "box_2d": [
+        0.678,
+        0.591,
+        0.698,
+        0.611
+      ],
+      "label": "Microaneurysms"
+    }
+  ],
+  "labels": [
+    "Microaneurysms",
+    "Hemorrhages",
+    "Exudates",
+    "Optic Disc"
+  ]
+}
