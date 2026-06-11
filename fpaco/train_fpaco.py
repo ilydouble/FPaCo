@@ -47,9 +47,13 @@ except ImportError:
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = box
             cx, cy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+            w_box = max(x2-x1, 1.0)
+            h_box = max(y2-y1, 1.0)
             score = scores[i].item() if scores is not None else 1.0
-            dist_sq = (xx - cx)**2 + (yy - cy)**2
-            blob = np.exp(-dist_sq / (2 * sigma**2))
+            sigma_x = max(w_box/2.0, 2.0)
+            sigma_y = max(h_box/2.0, 2.0)
+            exponent = -((xx-cx)**2/(2 * sigma_x**2)+(yy- cy)**2 /(2 *sigma_y**2))
+            blob = np.exp(exponent)
             heatmap = np.maximum(heatmap, blob * score)
         return heatmap
 
@@ -696,7 +700,8 @@ class FPaCoTrainer:
                     # --- Innovation 1: Attention Alignment (Dynamic) ---
                     # Calculate dynamic alpha: Starts at 0, goes up to 0.8
                     # Linearly increase trust in Teacher
-                    max_alpha = 0.8
+                    # Calculate dynamic alpha
+                    max_alpha = self.args.max_alpha
                     current_alpha = (epoch / self.args.epochs) * max_alpha
                     current_alpha = min(max_alpha, current_alpha)
                     
@@ -714,15 +719,11 @@ class FPaCoTrainer:
                     )
                 
                 # Total Loss
-                # Weights suggestion: 
-                # Guide=0.5 (Don't let VLM dominate if it's noisy)
-                # FG=1.0 (This is important supervision)
-                # BG=0.5 (Strong regularization against shortcuts)
                 loss = (loss_ce 
                         + self.args.beta * loss_con 
-                        + 0.5 * loss_guide 
-                        + 1.0 * loss_fg 
-                        + 0.1 * loss_bg)
+                        + self.args.lambda_guide * loss_guide 
+                        + self.args.lambda_fg * loss_fg 
+                        + self.args.lambda_bg * loss_bg)
                 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -790,6 +791,12 @@ if __name__ == '__main__':
     parser.add_argument('--val-interval', type=int, default=1)
     parser.add_argument('--combine-train-val', action='store_true', default=True)
     parser.add_argument('--no-heatmap', action='store_true', help="Disable heatmap channel (use RGB only)")
+
+    # Ablation / Tuning Args
+    parser.add_argument('--lambda-guide', type=float, default=0.5, help="Weight for Attention Alignment Loss")
+    parser.add_argument('--lambda-fg', type=float, default=1.0, help="Weight for Disentanglement Foreground Loss")
+    parser.add_argument('--lambda-bg', type=float, default=0.1, help="Weight for Disentanglement Background Loss")
+    parser.add_argument('--max-alpha', type=float, default=0.8, help="Max teacher trust alpha for Attention Alignment")
     
     args = parser.parse_args()
     os.makedirs(args.output_dir, exist_ok=True)
