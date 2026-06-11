@@ -1,0 +1,132 @@
+{
+    "aptos": {
+        "0": [
+            "fundus image with no diabetic retinopathy"
+        ],
+        "1": [
+            "fundus image with mild diabetic retinopathy"
+        ],
+        "2": [
+            "fundus image with moderate diabetic retinopathy"
+        ],
+        "3": [
+            "fundus image with severe diabetic retinopathy"
+        ],
+        "4": [
+            "fundus image with proliferative diabetic retinopathy"
+        ]
+    },
+    "finger": {
+        "0": [
+            "fingerprint pattern of type Stone"
+        ],
+        "1": [
+            "fingerprint pattern of type Gold"
+        ],
+        "2": [
+            "fingerprint pattern of type Dream"
+        ],
+        "3": [
+            "fingerprint pattern of type Electricity"
+        ],
+        "4": [
+            "fingerprint pattern of type Wind"
+        ],
+        "5": [
+            "fingerprint pattern of type Electricity with Wind"
+        ],
+        "6": [
+            "fingerprint pattern of type Drill"
+        ],
+        "7": [
+            "fingerprint pattern of type Light"
+        ],
+        "8": [
+            "fingerprint pattern of type Water"
+        ],
+        "9": [
+            "fingerprint pattern of type Fire"
+        ],
+        "10": [
+            "fingerprint pattern of type Wood"
+        ],
+        "11": [
+            "fingerprint pattern of type Earth"
+        ],
+        "12": [
+            "fingerprint pattern of type Ground"
+        ],
+        "13": [
+            "fingerprint pattern of type Mountain"
+        ],
+        "14": [
+            "fingerprint pattern of type Rock"
+        ],
+        "15": [
+            "fingerprint pattern of type Fire Light"
+        ],
+        "16": [
+            "fingerprint pattern of type Fire Wood"
+        ],
+        "17": [
+            "fingerprint pattern of type Fire Earth"
+        ],
+        "18": [
+            "fingerprint pattern of type Fire Drill"
+        ]
+    },
+    "mias": {
+        "0": [
+            "mammogram showing circumscribed masses"
+        ],
+        "1": [
+            "normal mammogram"
+        ],
+        "2": [
+            "mammogram showing ill-defined masses"
+        ],
+        "3": [
+            "mammogram showing asymmetry"
+        ],
+        "4": [
+            "mammogram showing architectural distortion"
+        ],
+        "5": [
+            "mammogram showing spiculated masses"
+        ],
+        "6": [
+            "mammogram showing calcification"
+        ]
+    },
+    "octa": {
+        "0": [
+            "OCTA image of Age-related Macular Degeneration"
+        ],
+        "1": [
+            "OCTA image of Choroidal Neovascularization"
+        ],
+        "2": [
+            "OCTA image of Central Serous Chorioretinopathy"
+        ],
+        "3": [
+            "OCTA image of Diabetic Retinopathy"
+        ],
+        "4": [
+            "Normal OCTA image"
+        ],
+        "5": [
+            "OCTA image of Other retinal abnormalities"
+        ],
+        "6": [
+            "OCTA image of Retinal Vein Occlusion"
+        ]
+    },
+    "oral_cancer": {
+        "0": [
+            "histopathology image of normal oral tissue"
+        ],
+        "1": [
+            "histopathology image of oral squamous cell carcinoma"
+        ]
+    }
+}

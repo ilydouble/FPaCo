@@ -13,8 +13,13 @@ def visualize(dataset_dir, limit=5, output_dir="vis_results"):
         print(f"No JSON files found in {dataset_dir}")
         return
 
-    random.shuffle(json_files)
-    selected_files = json_files[:limit]
+    if limit is not None and limit > 0:
+        random.shuffle(json_files)
+        selected_files = json_files[:limit]
+        print(f"Visualizing random {limit} images.")
+    else:
+        selected_files = json_files
+        print(f"Visualizing ALL {len(json_files)} images.")
     
     os.makedirs(output_dir, exist_ok=True)
     
@@ -23,15 +28,25 @@ def visualize(dataset_dir, limit=5, output_dir="vis_results"):
             with open(json_file, 'r') as f:
                 data = json.load(f)
             
-            img_path = Path(data.get('image_path', str(json_file.with_suffix('.png')))) # Fallback
-            if not img_path.exists():
-                # Try relative to json file
-                img_path = json_file.with_suffix('.png')
+            # 1. Try path from JSON (if absolute or correct relative)
+            img_path_str = data.get('image_path')
+            if img_path_str:
+                img_path = Path(img_path_str)
                 if not img_path.exists():
-                     img_path = json_file.with_suffix('.jpg')
+                     # Try treating it as relative to dataset_dir if it looks absolute but fails
+                     # or relative to the JSON file
+                     pass 
 
+            # 2. Try same name as JSON in same folder (Most common for FPaCo)
+            if not img_path_str or not img_path.exists():
+                for ext in ['.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff']:
+                    probe = json_file.with_suffix(ext)
+                    if probe.exists():
+                        img_path = probe
+                        break
+            
             if not img_path.exists():
-                print(f"Image not found for {json_file}")
+                print(f"[WARN] Image not found for {json_file.name}")
                 continue
                 
             img = Image.open(img_path).convert("RGB")

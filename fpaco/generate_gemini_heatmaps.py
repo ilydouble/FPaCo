@@ -53,12 +53,7 @@ def generate_detections(dataset_dir, output_dir=None, model_id='gemini-3-flash-p
     # }
     PROMPT_MAP = {
     # OCTA: 增加“血管网包围”的上下文描述，防止它把边缘的黑色背景当成 FAZ
-    'octa': (
-        "Target: Foveal Avascular Zone (FAZ). "
-        "Distinctive Features: A darker void that contrasts sharply with the surrounding bright, intricate capillary network. "
-        "Normal vs. Pathological: Look for the geometric center. A healthy FAZ is smooth and round/oval. "
-        "A pathological FAZ appears enlarged, irregular, or has 'bitten' jagged edges due to capillary dropout."
-    ),
+    'octa': 'A black gap or circular area in the center of the image without white lines. Please focus your attention on the black holes not at the edges of the image.',
 
     # Finger: 明确区分 Core 和 Delta 的形态差异，引导它进行分类
     'finger': 'The fingerprint Core point (top of the innermost loop) and the Delta point (triangular ridge intersection).',
@@ -103,27 +98,7 @@ def generate_detections(dataset_dir, output_dir=None, model_id='gemini-3-flash-p
             
     print(f"Using domain prompt: '{domain_prompt}' for dataset {dataset_name} (Key: {current_dataset_key})")
     
-    system_prompt = f"""
-    You are an expert medical image analyst. Your task is to detect specific features in the provided image.
-    
-    Features to detect: {domain_prompt}
-    
-    Return the result ONLY as a JSON object with the following structure:
-    {{
-      "detections": [
-        {{
-          "bbox": [x1, y1, x2, y2], 
-          "label": "string",
-          "confidence": float
-        }}
-      ]
-    }}
-    
-    - bbox should be [x1, y1, x2, y2] in ABSOLUTE PIXEL COORDINATES (0 to ImageWidth/Height).
-    - If no features are found, return an empty list for "detections".
-    - Do not encompass the entire image. Be specific.
-    - IMPORTANT: Output RAW JSON only. Do NOT use markdown code blocks (e.g., ```json).
-    """
+    # System prompt definition moved inside loop for dynamic usage
 
     # Iterate
     image_extensions = {'.png', '.jpg', '.jpeg', '.bmp'}
@@ -169,68 +144,143 @@ def generate_detections(dataset_dir, output_dir=None, model_id='gemini-3-flash-p
                 errors += 1
                 continue
             
-            # Call API
-            response = client.chat.completions.create(
-                model=model_id,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": system_prompt},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{base64_image}"
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens=8192,
-                response_format={"type": "json_object"}
-            )
-
-            content = response.choices[0].message.content
+            # --- DYNAMIC PROMPT LOGIC ---
+            current_prompt_text = domain_prompt
+            should_run_inference = True
             
-            try:
-                # Robust JSON Extraction
-                import re
-                import ast
+            if current_dataset_key == 'mias':
+                class_dir = img_path.parent.name
                 
-                json_str = content
-                # Try to find JSON object structure
-                match = re.search(r'(\{.*\})', content, re.DOTALL)
-                if match:
-                    json_str = match.group(1)
+                # Special handling for MIAS Classes
+                if class_dir == 'class_1':
+                    # NORMAL CLASS: Force empty detection to avoid hallucinations
+                    should_run_inference = False
+                    detections = []
+                elif class_dir == 'class_0':
+                    current_prompt_text = "Target: Circumscribed Mass. Look for a well-defined, round or oval high-density region. Ignore normal glands."
+                elif class_dir == 'class_2':
+                    current_prompt_text = "Target: Breast Abnormalities. Look for significant texture disruptions or unclassified masses."
+                elif class_dir == 'class_3':
+                    current_prompt_text = "Target: Asymmetry. Look for focal density that stands out from the surrounding pattern."
+                elif class_dir == 'class_4':
+                    current_prompt_text = "Target: Architectural Distortion. Look for spiculations or radiating lines without a central mass, or focal retraction."
+                elif class_dir == 'class_5':
+                    current_prompt_text = "Target: Spiculated Mass. Look for a central density with radiating star-like lines (malignant feature)."
+                elif class_dir == 'class_6':
+                    current_prompt_text = "Target: Microcalcifications. Look for clusters of tiny, bright white specks (grains of salt)."
+
+            elif current_dataset_key == 'octa':
+                class_dir = img_path.parent.name
                 
-                # Attempt 1: Standard JSON
+                # Special handling for OCTA Classes
+                # 0:AMD, 1:CNV, 2:CSC, 3:DR, 4:NORMAL, 5:OTHERS, 6:RVO
+                if class_dir == 'class_4':
+                    # NORMAL CLASS: Force empty detection
+                    should_run_inference = False
+                    detections = []
+                elif class_dir == 'class_0': # AMD
+                    current_prompt_text = "Target: AMD. Look for Choroidal Neovascularization (CNV) networks or Drusen. Focus on abnormal vascular loops or dark gaps in the foveal avascular zone."
+                elif class_dir == 'class_1': # CNV
+                    current_prompt_text = "Target: CNV. Look for a hyper-reflective vascular membrane or tangled vessel network disrupting the normal capillary layout."
+                elif class_dir == 'class_2': # CSC
+                    current_prompt_text = "Target: CSC. Look for subretinal fluid accumulation (dark voids) or pigment epithelial detachment."
+                elif class_dir == 'class_3': # DR
+                    current_prompt_text = "Target: Diabetic Retinopathy. Look for Microaneurysms (tiny dilation), capillary non-perfusion areas (dark gaps), or enlarged foveal avascular zone."
+                elif class_dir == 'class_5': # OTHERS
+                    current_prompt_text = "Target: Retinal Anomalies. Look for any vascular disruption, non-perfusion, or abnormal vessel growth not typical of healthy retina."
+                elif class_dir == 'class_6': # RVO
+                    current_prompt_text = "Target: RVO. Look for venous dilation, tortuosity (twisted vessels), and capillary dropout sectors (dark wedges)."
+
+            if not should_run_inference:
+                 # Skip API call for Normal cases
+                 detections = []
+            else:
+                # Construct System Prompt dynamically
+                system_prompt = f"""
+    You are an expert medical image analyst. Your task is to detect specific features in the provided image.
+    
+    Features to detect: {current_prompt_text}
+    
+    Return the result ONLY as a JSON object with the following structure:
+    {{
+      "detections": [
+        {{
+          "bbox": [x1, y1, x2, y2], 
+          "label": "string",
+          "confidence": float
+        }}
+      ]
+    }}
+    
+    - bbox should be [x1, y1, x2, y2] in ABSOLUTE PIXEL COORDINATES (0 to ImageWidth/Height).
+    - If no features are found, return an empty list for "detections".
+    - Do not encompass the entire image. Be specific.
+    - IMPORTANT: Output RAW JSON only. Do NOT use markdown code blocks (e.g., ```json).
+    """
+    
+                # Call API
+                response = client.chat.completions.create(
+                    model=model_id,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": system_prompt},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{base64_image}"
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    max_tokens=8192*2,
+                    response_format={"type": "json_object"}
+                )
+    
+                content = response.choices[0].message.content
+            
+            if should_run_inference:
                 try:
-                    result = json.loads(json_str)
-                except:
-                    # Attempt 2: Python Literal Eval (Handles single quotes, trailing commas)
+                    # Robust JSON Extraction
+                    import re
+                    import ast
+                    
+                    json_str = content
+                    # Try to find JSON object structure
+                    match = re.search(r'(\{.*\})', content, re.DOTALL)
+                    if match:
+                        json_str = match.group(1)
+                    
+                    # Attempt 1: Standard JSON
                     try:
-                        result = ast.literal_eval(json_str)
+                        result = json.loads(json_str)
                     except:
-                        # Attempt 3: Relaxed Regex for just the list
-                        # sometimes model returns just the list [ ... ]
-                        match_list = re.search(r'(\[.*\])', content, re.DOTALL)
-                        if match_list:
-                            try:
-                                result = {"detections": ast.literal_eval(match_list.group(1))}
-                            except:
-                                raise ValueError("Could not parse JSON or List")
-                        else:
-                             raise ValueError("No JSON object or list found")
+                        # Attempt 2: Python Literal Eval (Handles single quotes, trailing commas)
+                        try:
+                            result = ast.literal_eval(json_str)
+                        except:
+                            # Attempt 3: Relaxed Regex for just the list
+                            # sometimes model returns just the list [ ... ]
+                            match_list = re.search(r'(\[.*\])', content, re.DOTALL)
+                            if match_list:
+                                try:
+                                    result = {"detections": ast.literal_eval(match_list.group(1))}
+                                except:
+                                    raise ValueError("Could not parse JSON or List")
+                            else:
+                                 raise ValueError("No JSON object or list found")
 
-                if isinstance(result, list):
-                     detections = result
-                else:
-                     detections = result.get("detections", [])
+                    if isinstance(result, list):
+                         detections = result
+                    else:
+                         detections = result.get("detections", [])
 
-            except Exception as e:
-                print(f"[WARN] Failed to parse response for {img_path.name}: {e}")
-                print(f"RAW RESP: {content}") 
-                detections = []
+                except Exception as e:
+                    print(f"[WARN] Failed to parse response for {img_path.name}: {e}")
+                    print(f"RAW RESP: {content}") 
+                    detections = []
 
             # Post-process Detections (Add class_name logic for compatibility)
             processed_detections = []

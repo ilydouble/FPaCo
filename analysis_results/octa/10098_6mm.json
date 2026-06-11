@@ -1,0 +1,47 @@
+[
+  {
+    "box_2d": [
+      0.183,
+      0.169,
+      0.394,
+      0.321
+    ],
+    "label": "vessel_dropout"
+  },
+  {
+    "box_2d": [
+      0.341,
+      0.018,
+      0.761,
+      0.321
+    ],
+    "label": "capillary_non_perfusion"
+  },
+  {
+    "box_2d": [
+      0.016,
+      0.292,
+      0.374,
+      0.648
+    ],
+    "label": "capillary_non_perfusion"
+  },
+  {
+    "box_2d": [
+      0.254,
+      0.611,
+      0.798,
+      0.898
+    ],
+    "label": "capillary_non_perfusion"
+  },
+  {
+    "box_2d": [
+      0.384,
+      0.331,
+      0.618,
+      0.579
+    ],
+    "label": "FAZ"
+  }
+]

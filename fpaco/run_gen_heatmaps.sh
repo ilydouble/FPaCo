@@ -20,9 +20,9 @@ if [ -z "$YUNWU_API_KEY" ]; then
     echo "WARNING: YUNWU_API_KEY is not set. Gemini generation might fail."
 fi
 
-# 1. MIAS (Gemini)
-echo "[1/7] Processing MIAS (Gemini)..."
-python "$GEMINI_SCRIPT" --dataset "$WORKSPACE/datasets/mias_classification_dataset" --model gemini-3-flash-preview --overwrite
+# # 1. MIAS (Gemini)
+# echo "[1/7] Processing MIAS (Gemini)..."
+# python "$GEMINI_SCRIPT" --dataset "$WORKSPACE/datasets/mias_classification_dataset" --model gemini-3-flash-preview --overwrite
 
 # # 2. Oral Cancer (Florence-2)
 # echo "[2/7] Processing Oral Cancer (Florence-2)..."

@@ -1,0 +1,254 @@
+{
+    "aptos": {
+        "0": [
+            "A fundus photograph showing a healthy retina with no signs of diabetic retinopathy.",
+            "Retinal image with normal appearance, no microaneurysms or hemorrhages visible.",
+            "Fundus image demonstrating no diabetic retinopathy, clear retinal vasculature.",
+            "Normal fundus scan without any diabetic changes.",
+            "Healthy retinal scan showing no evidence of diabetic eye disease."
+        ],
+        "1": [
+            "Fundus photograph showing mild nonproliferative diabetic retinopathy.",
+            "Retinal image with few microaneurysms indicating mild diabetic retinopathy.",
+            "Fundus scan demonstrating early signs of diabetic retinopathy with scattered microaneurysms.",
+            "Mild diabetic retinopathy with minimal retinal changes.",
+            "Early stage diabetic retinopathy fundus image with few abnormalities."
+        ],
+        "2": [
+            "Fundus photograph showing moderate nonproliferative diabetic retinopathy.",
+            "Retinal image with multiple microaneurysms and dot hemorrhages.",
+            "Moderate diabetic retinopathy with visible hard exudates and hemorrhages.",
+            "Fundus scan showing moderate diabetic eye disease with scattered retinal lesions.",
+            "Moderate stage diabetic retinopathy with significant microaneurysms."
+        ],
+        "3": [
+            "Fundus photograph showing severe nonproliferative diabetic retinopathy.",
+            "Retinal image with extensive hemorrhages and venous beading.",
+            "Severe diabetic retinopathy with intraretinal microvascular abnormalities.",
+            "Fundus scan demonstrating severe diabetic changes requiring close monitoring.",
+            "Advanced nonproliferative diabetic retinopathy with numerous hemorrhages."
+        ],
+        "4": [
+            "Fundus photograph showing proliferative diabetic retinopathy.",
+            "Retinal image with neovascularization and abnormal blood vessel growth.",
+            "Proliferative diabetic retinopathy with new vessel formation.",
+            "Advanced diabetic retinopathy fundus scan with vitreous hemorrhage risk.",
+            "Severe proliferative diabetic eye disease requiring urgent treatment."
+        ]
+    },
+    "finger": {
+        "0": [
+            "Fingerprint pattern classification: Stone type fingerprint pattern.",
+            "Fingerprint image showing Stone pattern characteristics.",
+            "Biometric fingerprint of Stone pattern type."
+        ],
+        "1": [
+            "Fingerprint pattern classification: Gold type fingerprint pattern.",
+            "Fingerprint image showing Gold pattern characteristics.",
+            "Biometric fingerprint of Gold pattern type."
+        ],
+        "2": [
+            "Fingerprint pattern classification: Dream type fingerprint pattern.",
+            "Fingerprint image showing Dream pattern characteristics.",
+            "Biometric fingerprint of Dream pattern type."
+        ],
+        "3": [
+            "Fingerprint pattern classification: Electricity type fingerprint pattern.",
+            "Fingerprint image showing Electricity pattern characteristics.",
+            "Biometric fingerprint of Electricity pattern type."
+        ],
+        "4": [
+            "Fingerprint pattern classification: Wind type fingerprint pattern.",
+            "Fingerprint image showing Wind pattern characteristics.",
+            "Biometric fingerprint of Wind pattern type."
+        ],
+        "5": [
+            "Fingerprint pattern classification: Electricity with Wind type fingerprint pattern.",
+            "Fingerprint image showing combined Electricity and Wind pattern.",
+            "Biometric fingerprint of Electricity with Wind pattern type."
+        ],
+        "6": [
+            "Fingerprint pattern classification: Drill type fingerprint pattern.",
+            "Fingerprint image showing Drill pattern characteristics.",
+            "Biometric fingerprint of Drill pattern type."
+        ],
+        "7": [
+            "Fingerprint pattern classification: Light type fingerprint pattern.",
+            "Fingerprint image showing Light pattern characteristics.",
+            "Biometric fingerprint of Light pattern type."
+        ],
+        "8": [
+            "Fingerprint pattern classification: Water type fingerprint pattern.",
+            "Fingerprint image showing Water pattern characteristics.",
+            "Biometric fingerprint of Water pattern type."
+        ],
+        "9": [
+            "Fingerprint pattern classification: Fire type fingerprint pattern.",
+            "Fingerprint image showing Fire pattern characteristics.",
+            "Biometric fingerprint of Fire pattern type."
+        ],
+        "10": [
+            "Fingerprint pattern classification: Wood type fingerprint pattern.",
+            "Fingerprint image showing Wood pattern characteristics.",
+            "Biometric fingerprint of Wood pattern type."
+        ],
+        "11": [
+            "Fingerprint pattern classification: Earth type fingerprint pattern.",
+            "Fingerprint image showing Earth pattern characteristics.",
+            "Biometric fingerprint of Earth pattern type."
+        ],
+        "12": [
+            "Fingerprint pattern classification: Ground type fingerprint pattern.",
+            "Fingerprint image showing Ground pattern characteristics.",
+            "Biometric fingerprint of Ground pattern type."
+        ],
+        "13": [
+            "Fingerprint pattern classification: Mountain type fingerprint pattern.",
+            "Fingerprint image showing Mountain pattern characteristics.",
+            "Biometric fingerprint of Mountain pattern type."
+        ],
+        "14": [
+            "Fingerprint pattern classification: Rock type fingerprint pattern.",
+            "Fingerprint image showing Rock pattern characteristics.",
+            "Biometric fingerprint of Rock pattern type."
+        ],
+        "15": [
+            "Fingerprint pattern classification: Fire Light type fingerprint pattern.",
+            "Fingerprint image showing combined Fire and Light pattern.",
+            "Biometric fingerprint of Fire Light pattern type."
+        ],
+        "16": [
+            "Fingerprint pattern classification: Fire Wood type fingerprint pattern.",
+            "Fingerprint image showing combined Fire and Wood pattern.",
+            "Biometric fingerprint of Fire Wood pattern type."
+        ],
+        "17": [
+            "Fingerprint pattern classification: Fire Earth type fingerprint pattern.",
+            "Fingerprint image showing combined Fire and Earth pattern.",
+            "Biometric fingerprint of Fire Earth pattern type."
+        ],
+        "18": [
+            "Fingerprint pattern classification: Fire Drill type fingerprint pattern.",
+            "Fingerprint image showing combined Fire and Drill pattern.",
+            "Biometric fingerprint of Fire Drill pattern type."
+        ]
+    },
+    "mias": {
+        "0": [
+            "Mammogram showing circumscribed masses with well-defined borders.",
+            "Breast X-ray image with clearly outlined round or oval mass.",
+            "Mammography scan displaying circumscribed breast lesion.",
+            "Well-circumscribed mass visible in mammogram image.",
+            "Mammogram with smooth-bordered tumor mass."
+        ],
+        "1": [
+            "Normal mammogram showing healthy breast tissue.",
+            "Mammography scan with no abnormal findings.",
+            "Healthy breast X-ray image with normal tissue pattern.",
+            "Normal mammogram without any suspicious lesions.",
+            "Clear mammography scan showing normal breast parenchyma."
+        ],
+        "2": [
+            "Mammogram showing other abnormalities not specifically categorized.",
+            "Breast X-ray with miscellaneous findings.",
+            "Mammography image with unclassified abnormal features.",
+            "Other type mammogram abnormality.",
+            "Mammogram with non-specific breast changes."
+        ],
+        "3": [
+            "Mammogram showing breast asymmetry between left and right.",
+            "Mammography scan with asymmetric breast tissue density.",
+            "Breast X-ray displaying asymmetric findings.",
+            "Asymmetric mammogram requiring further evaluation.",
+            "Mammogram showing focal asymmetry in breast tissue."
+        ],
+        "4": [
+            "Mammogram showing architectural distortion of breast tissue.",
+            "Mammography scan with distorted tissue architecture.",
+            "Breast X-ray displaying spiculated architectural changes.",
+            "Mammogram with architectural distortion pattern.",
+            "Distorted breast parenchyma visible on mammogram."
+        ],
+        "5": [
+            "Mammogram showing spiculated masses with irregular borders.",
+            "Breast X-ray with star-shaped or spiculated lesion.",
+            "Mammography image displaying spiculated tumor mass.",
+            "Spiculated breast mass on mammogram suggestive of malignancy.",
+            "Mammogram showing irregular spiculated breast lesion."
+        ],
+        "6": [
+            "Mammogram showing calcifications in breast tissue.",
+            "Mammography scan with microcalcifications visible.",
+            "Breast X-ray displaying calcified deposits.",
+            "Mammogram with clustered calcifications.",
+            "Calcification pattern visible on mammography image."
+        ]
+    },
+    "octa": {
+        "0": [
+            "OCTA image showing age-related macular degeneration (AMD).",
+            "Optical Coherence Tomography Angiography with AMD features.",
+            "OCTA scan displaying macular degeneration changes.",
+            "Age-related macular degeneration visible on OCTA.",
+            "OCTA showing drusen and AMD-related vascular changes."
+        ],
+        "1": [
+            "OCTA image showing choroidal neovascularization (CNV).",
+            "Optical Coherence Tomography Angiography with CNV membrane.",
+            "OCTA scan displaying abnormal choroidal vessels.",
+            "Choroidal neovascularization pattern on OCTA.",
+            "OCTA showing subretinal neovascular membrane."
+        ],
+        "2": [
+            "OCTA image showing central serous chorioretinopathy (CSC).",
+            "Optical Coherence Tomography Angiography with CSC features.",
+            "OCTA scan displaying subretinal fluid and choroidal thickness changes.",
+            "Central serous chorioretinopathy pattern on OCTA.",
+            "OCTA showing pigment epithelial detachment in CSC."
+        ],
+        "3": [
+            "OCTA image showing diabetic retinopathy (DR).",
+            "Optical Coherence Tomography Angiography with microaneurysms.",
+            "OCTA scan displaying diabetic macular changes.",
+            "Diabetic retinopathy pattern visible on OCTA.",
+            "OCTA showing capillary non-perfusion areas from diabetes."
+        ],
+        "4": [
+            "OCTA image showing normal retinal vasculature (NORMAL).",
+            "Optical Coherence Tomography Angiography scan with healthy blood vessels.",
+            "Normal OCTA scan without vascular abnormalities.",
+            "Healthy retinal blood flow pattern on OCTA.",
+            "OCTA image demonstrating normal foveal avascular zone."
+        ],
+        "5": [
+            "OCTA image showing other retinal abnormalities (OTHERS).",
+            "Optical Coherence Tomography Angiography with unclassified pathology.",
+            "OCTA scan displaying non-specific retinal vascular changes.",
+            "Other retinal disease pattern visible on OCTA.",
+            "OCTA showing retinal abnormalities not falling into major categories."
+        ],
+        "6": [
+            "OCTA image showing retinal vein occlusion (RVO).",
+            "Optical Coherence Tomography Angiography with venous occlusion.",
+            "OCTA scan displaying retinal venous blockage.",
+            "Retinal vein occlusion pattern visible on OCTA.",
+            "OCTA showing venous congestion and non-perfusion."
+        ]
+    },
+    "oral_cancer": {
+        "0": [
+            "Histopathology image of normal oral mucosa tissue.",
+            "Microscopic view of healthy oral epithelium.",
+            "Normal oral tissue biopsy without malignancy.",
+            "Healthy oral cavity tissue under microscope.",
+            "Non-cancerous oral mucosa histology slide."
+        ],
+        "1": [
+            "Histopathology image of oral squamous cell carcinoma.",
+            "Microscopic view of malignant oral cancer tissue.",
+            "Oral carcinoma biopsy showing cancerous cells.",
+            "Oral cancer tissue under microscope with atypical cells.",
+            "Malignant oral squamous cell carcinoma histology slide."
+        ]
+    }
+}

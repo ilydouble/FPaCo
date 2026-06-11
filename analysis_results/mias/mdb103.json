@@ -1,0 +1,16 @@
+{
+  "roiAnalysis": {
+    "regions": [
+      {
+        "regionType": "Mass",
+        "bbox": [
+          0.388,
+          0.347,
+          0.411,
+          0.425
+        ],
+        "confidence": 0.95
+      }
+    ]
+  }
+}

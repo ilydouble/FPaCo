@@ -19,14 +19,25 @@ def generate_gaussian_heatmap(h, w, boxes, scores=None, sigma=15):
     xx, yy = np.meshgrid(np.arange(w), np.arange(h))
     
     for i, box in enumerate(boxes):
-        x1, y1, x2, y2 = box
-        cx, cy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
         score = scores[i].item() if scores is not None else 1.0
         
-        # Distance squared to center
-        dist_sq = (xx - cx)**2 + (yy - cy)**2
-        # Gaussian blob
-        blob = np.exp(-dist_sq / (2 * sigma**2))
+        # Filter: Ignore low confidence boxes (False Positive Rejection)
+        if score < 0.9:
+            continue
+            
+        x1, y1, x2, y2 = box
+        cx, cy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+        w_box = max(x2 - x1, 1.0)
+        h_box = max(y2 - y1, 1.0)
+        
+        # Adaptive Sigma: Expanded coverage (High Recall strategy)
+        # Using dimension / 1.5 increases the spread significantly compared to / 2.0
+        sigma_x = max(w_box / 1, 2.0)
+        sigma_y = max(h_box / 1, 2.0)
+        
+        # Elliptical Gaussian
+        exponent = -((xx - cx)**2 / (2 * sigma_x**2) + (yy - cy)**2 / (2 * sigma_y**2))
+        blob = np.exp(exponent)
         
         # Aggregate using maximum
         heatmap = np.maximum(heatmap, blob * score)

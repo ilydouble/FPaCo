@@ -47,12 +47,14 @@ except ImportError:
         for i, box in enumerate(boxes):
             x1, y1, x2, y2 = box
             cx, cy = (x1 + x2) / 2.0, (y1 + y2) / 2.0
-            w_box = max(x2-x1, 1.0)
-            h_box = max(y2-y1, 1.0)
+            w_box = max(x2 - x1, 1.0)
+            h_box = max(y2 - y1, 1.0)
             score = scores[i].item() if scores is not None else 1.0
-            sigma_x = max(w_box/2.0, 2.0)
-            sigma_y = max(h_box/2.0, 2.0)
-            exponent = -((xx-cx)**2/(2 * sigma_x**2)+(yy- cy)**2 /(2 *sigma_y**2))
+            
+            sigma_x = max(w_box / 2.0, 2.0)
+            sigma_y = max(h_box / 2.0, 2.0)
+
+            exponent = -((xx - cx)**2 / (2 * sigma_x**2) + (yy - cy)**2 / (2 * sigma_y**2))
             blob = np.exp(exponent)
             heatmap = np.maximum(heatmap, blob * score)
         return heatmap
@@ -298,7 +300,14 @@ class HeatmapBPaCoDataset(Dataset):
                 except: pass
             
             heatmap = generate_gaussian_heatmap(h, w, boxes, scores=scores, sigma=self.sigma)
-            if heatmap.max() > 0: heatmap = heatmap / heatmap.max()
+            
+            # [MODIFIED] Do NOT normalize to 1.0 (heatmap / max).
+            # Instead, reduce confidence globally to combat overconfidence.
+            # e.g., multiply by 0.8
+            heatmap = heatmap * 0.8 
+            
+            # Clip just in case, though it shouldn't exceed 1.0 if scores are <=1.0
+            heatmap = np.clip(heatmap, 0.0, 1.0)
         
         v1 = self._apply_augmentations(pil_img, heatmap)
         if self.split == 'train':
@@ -374,8 +383,9 @@ class AttentionAlignmentLoss(nn.Module):
     Now supports Dynamic Hybrid Target:
     Target = (1 - alpha) * VLM_Heatmap + alpha * Teacher_Attention
     """
-    def __init__(self):
+    def __init__(self, loss_type='relu'):
         super().__init__()
+        self.loss_type = loss_type
 
     def forward(self, feature_map_student, feature_map_teacher, gt_heatmap, alpha=0.0):
         """
@@ -421,71 +431,19 @@ class AttentionAlignmentLoss(nn.Module):
         target_hybrid = (1.0 - alpha) * gt_small + alpha * attn_teacher_norm
         target_hybrid = target_hybrid.detach()
         
-        # 4. Asymmetric Loss: ReLU(Target - Student)
-        # Penalize if Student is LOWER than Target (Under-attention)
-        diff = target_hybrid - attn_student_norm
-        loss = torch.mean(F.relu(diff) ** 2)
+        # 4. Loss Calculation
+        if self.loss_type == 'mse':
+            # Symmetric Distillation
+            loss = torch.mean((target_hybrid - attn_student_norm) ** 2)
+        else:
+            # Asymmetric Loss: ReLU(Target - Student)
+            # Penalize if Student is LOWER than Target (Under-attention)
+            diff = target_hybrid - attn_student_norm
+            loss = torch.mean(F.relu(diff) ** 2)
         
         return loss
 
-class DisentanglementLoss(nn.Module):
-    """
-    Innovation 2: Foreground-Background Disentanglement
-    Includes Projection to ensure features align with Prototypes.
-    """
-    def __init__(self, temperature=0.07):
-        super().__init__()
-        self.temp = temperature
-        # KL Divergence expects Log probabilities
-        self.kl_div = nn.KLDivLoss(reduction='batchmean')
 
-    def forward(self, feature_map, gt_heatmap, labels, prototypes, projector):
-        """
-        projector: self.model_q.proj (Reuse the projection head)
-        """
-        B, C, H, W = feature_map.shape
-        
-        # 1. Resize Heatmap to Feature Map size
-        # Use simple interpolation. Heatmap is Bx1xHxW
-        mask_fg = F.interpolate(gt_heatmap, size=(H, W), mode='bilinear', align_corners=False)
-        mask_bg = 1.0 - mask_fg
-        
-        # 2. Spatial Weighted Pooling (Disentanglement)
-        # Foreground
-        sum_fg = torch.sum(mask_fg * feature_map, dim=(2, 3)) 
-        norm_fg = torch.sum(mask_fg, dim=(2, 3)) + 1e-6 
-        feat_fg = sum_fg / norm_fg # [B, Channel_Dim]
-        
-        # Background
-        sum_bg = torch.sum(mask_bg * feature_map, dim=(2, 3))
-        norm_bg = torch.sum(mask_bg, dim=(2, 3)) + 1e-6
-        feat_bg = sum_bg / norm_bg # [B, Channel_Dim]
-
-        # 3. Project to Embedding Space (128-dim)
-        z_fg = projector(feat_fg)
-        z_fg = F.normalize(z_fg, dim=1)
-        
-        z_bg = projector(feat_bg)
-        z_bg = F.normalize(z_bg, dim=1)
-
-        # 4. Foreground Loss: Classification / Alignment with Class Prototype
-        logits_fg = torch.matmul(z_fg, prototypes.T) / self.temp
-        loss_fg = F.cross_entropy(logits_fg, labels)
-
-        # 5. Background Loss: Push towards Uniform Distribution (High Entropy)
-        # Using KL Divergence: KL(P_bg || Uniform)
-        # We want P_bg to act like Uniform distribution (1/K)
-        logits_bg = torch.matmul(z_bg, prototypes.T) / self.temp
-        log_probs_bg = F.log_softmax(logits_bg, dim=1)
-        
-        # Target is Uniform Distribution
-        num_classes = prototypes.shape[0]
-        target_uniform = torch.full_like(log_probs_bg, 1.0 / num_classes)
-        
-        # KLDiv Loss automatically assumes target is probability, input is log-prob
-        loss_bg = self.kl_div(log_probs_bg, target_uniform)
-
-        return loss_fg, loss_bg
 
 class FocalLoss(nn.Module):
     def __init__(self, gamma=2.0, alpha=None, reduction='mean'):
@@ -543,27 +501,29 @@ def momentum_update(model_k, model_q, m=0.999):
         param_k.data = param_k.data * m + param_q.data * (1. - m)
 
 def compute_contrastive_loss(features, labels, queue, prototypes, temperature=0.07):
-    # 1. Similarity with Prototypes (Positives + Class Negatives) => [B, Num_Classes]
-    logits_proto = torch.matmul(features, prototypes.T)
+    # # 1. Similarity with Prototypes (Positives + Class Negatives) => [B, Num_Classes]
+    # logits_proto = torch.matmul(features, prototypes.T)
     
-    # 2. Similarity with Queue (Negatives) => [B, Queue_Size]
-    logits_queue = torch.matmul(features, queue.queue.clone().detach().T)
+    # # 2. Similarity with Queue (Negatives) => [B, Queue_Size]
+    # logits_queue = torch.matmul(features, queue.queue.clone().detach().T)
     
-    # 3. Combine: Denominator = exp(Proto_Pos) + sum(exp(Proto_Neg)) + sum(exp(Queue_Neg))
-    # Concatenate along class dimension
-    logits = torch.cat([logits_proto, logits_queue], dim=1) / temperature
+    # # 3. Combine: Denominator = exp(Proto_Pos) + sum(exp(Proto_Neg)) + sum(exp(Queue_Neg))
+    # # Concatenate along class dimension
+    # logits = torch.cat([logits_proto, logits_queue], dim=1) / temperature
     
-    # F.cross_entropy will handle the log-softmax. 
-    # Since labels are in [0, Num_Classes-1], they naturally match the 'logits_proto' part.
-    # The 'logits_queue' part merely adds more negatives to the denominator.
-    loss = F.cross_entropy(logits, labels)
+    # # F.cross_entropy will handle the log-softmax. 
+    # # Since labels are in [0, Num_Classes-1], they naturally match the 'logits_proto' part.
+    # # The 'logits_queue' part merely adds more negatives to the denominator.
+    # loss = F.cross_entropy(logits, labels)
+    logits_proto = torch.matmul(features, prototypes.T) / temperature
+    loss = F.cross_entropy(logits_proto, labels)
     return loss
 
 def cross_entropy_with_logit_compensation(logits, targets, class_freq, tau=1.0):
     if class_freq is None: return F.cross_entropy(logits, targets)
     prior = class_freq / class_freq.sum()
     log_prior = torch.log(prior + 1e-8).to(logits.device)
-    adjusted_logits = logits - tau * log_prior
+    adjusted_logits = logits + tau * log_prior
     return F.cross_entropy(adjusted_logits, targets)
 
 # =========================================================
@@ -611,8 +571,8 @@ class FPaCoTrainer:
         for s in self.train_dataset.samples: self.class_freq[s[1]] += 1
         
         # New Losses
-        self.criterion_align = AttentionAlignmentLoss()
-        self.criterion_disen = DisentanglementLoss(temperature=args.temperature)
+        self.criterion_align = AttentionAlignmentLoss(loss_type=args.align_loss_type)
+        # self.criterion_disen removed
         
         # Main Classification Criterion
         if args.focal_gamma > 0.0:
@@ -676,7 +636,7 @@ class FPaCoTrainer:
                       prior = self.class_freq / self.class_freq.sum()
                       log_prior = torch.log(prior + 1e-8).to(logits.device)
                       # Apply adjustment
-                      final_logits = logits - self.args.tau * log_prior
+                      final_logits = logits + self.args.tau * log_prior
                 else:
                       final_logits = logits
 
@@ -692,38 +652,51 @@ class FPaCoTrainer:
                 
                 # 3. Advanced Losses (Only if Heatmap is being used)
                 loss_guide = torch.tensor(0.0).to(self.device)
-                loss_fg = torch.tensor(0.0).to(self.device)
-                loss_bg = torch.tensor(0.0).to(self.device)
+                alpha_adaptive = 0.0
+
                 
                 if self.use_heatmap:
                     
-                    # --- Innovation 1: Attention Alignment (Dynamic) ---
-                    # Calculate dynamic alpha: Starts at 0, goes up to 0.8
-                    # Linearly increase trust in Teacher
-                    # Calculate dynamic alpha
-                    max_alpha = self.args.max_alpha
-                    current_alpha = (epoch / self.args.epochs) * max_alpha
-                    current_alpha = min(max_alpha, current_alpha)
+                    # --- Innovation 1: Attention Alignment (Dynamic & Confidence-Adaptive) ---
+                    # 1. Base Schedule (Global trust in Teacher increases over time)
+                    max_alpha = self.args.max_alpha # e.g. 0.8
+                    alpha_base = (epoch / self.args.epochs) * max_alpha
+                    alpha_base = min(max_alpha, alpha_base)
                     
-                    loss_guide = self.criterion_align(map_q, map_k, gt_heatmap, alpha=current_alpha)
+                    # 2. Confidence-Adaptive Adjustment (Per Sample)
+                    # Measure VLM Confidence: Max value in heatmap (0.0 to 1.0)
+                    # [B, 1, H, W] -> [B]
+                    if gt_heatmap is not None:
+                         heatmap_max = gt_heatmap.view(gt_heatmap.size(0), -1).max(dim=1).values
+                    else:
+                         heatmap_max = torch.zeros(v1.size(0)).to(self.device)
+                         
+                    # Adaptive Logic:
+                    # If heatmap_max is HIGH (1.0) -> Trust VLM (Use alpha_base)
+                    # If heatmap_max is LOW (0.0)  -> Trust Teacher (Boost alpha towards 1.0)
+                    # Formula: alpha = alpha_base + (1 - confidence) * (1 - alpha_base)
+                    # Explanation:
+                    #   Conf=1.0 => alpha = alpha_base (Normal schedule)
+                    #   Conf=0.0 => alpha = alpha_base + (1 - alpha_base) = 1.0 (Full Teacher)
                     
-                    
-                    # --- Innovation 2: Disentanglement ---
-                    # Pass the projector (self.model_q.proj) to the loss function
-                    loss_fg, loss_bg = self.criterion_disen(
-                        feature_map=map_q, 
-                        gt_heatmap=gt_heatmap, 
-                        labels=labels, 
-                        prototypes=self.C1, 
-                        projector=self.model_q.proj
-                    )
+                    if not self.args.no_adaptive_alpha:
+                        alpha_adaptive = alpha_base + (1.0 - heatmap_max) * (1.0 - alpha_base)
+                        # Reshape for broadcasting [B, 1, 1, 1]
+                        alpha_adaptive = alpha_adaptive.view(-1, 1, 1, 1)
+                    else:
+                        alpha_adaptive = alpha_base
+
+                    loss_guide = self.criterion_align(map_q, map_k, gt_heatmap, alpha=alpha_adaptive)
                 
                 # Total Loss
+                # Warmup Strategy: Disable Heatmap Guidance for the first N epochs
+                guide_weight = self.args.guide_weight
+                if epoch <= self.args.warmup_epochs:
+                    guide_weight = 0.0
+
                 loss = (loss_ce 
                         + self.args.beta * loss_con 
-                        + self.args.lambda_guide * loss_guide 
-                        + self.args.lambda_fg * loss_fg 
-                        + self.args.lambda_bg * loss_bg)
+                        + guide_weight * loss_guide)
                 
                 self.optimizer.zero_grad()
                 loss.backward()
@@ -740,8 +713,10 @@ class FPaCoTrainer:
             
             # Validation
             if epoch % self.args.val_interval == 0:
-                acc, f1 = self.validate(val_loader)
-                print(f"Epoch {epoch}: Loss={avg_loss:.4f}, Guide={loss_guide:.4f}, FG={loss_fg:.4f}, Alpha={current_alpha:.2f}, Val Acc={acc:.4f}, Val F1={f1:.4f}")
+                acc, f1, auc_score = self.validate(val_loader)
+                # Handle alpha printing potentially being scalar
+                mean_alpha = alpha_adaptive.mean().item() if isinstance(alpha_adaptive, torch.Tensor) else alpha_adaptive
+                print(f"Epoch {epoch}: Loss={avg_loss:.4f}, Guide={loss_guide:.4f}, MeanAlpha={mean_alpha:.2f}, Val Acc={acc:.4f}, Val F1={f1:.4f}, Val AUC={auc_score:.4f}")
                 
                 if f1 > best_f1:
                     best_f1 = f1
@@ -749,9 +724,20 @@ class FPaCoTrainer:
                         'model_q': self.model_q.state_dict(),
                         'classifier': self.classifier.state_dict(),
                         'epoch': epoch,
-                        'f1': f1
+                        'f1': f1,
+                        'auc': auc_score
                     }
                     torch.save(checkpoint, os.path.join(self.args.output_dir, "best_model.pth"))
+                    
+                    # Save results.json
+                    results = {
+                        "best_acc": acc,
+                        "best_f1": f1,
+                        "best_auc": auc_score,
+                        "best_epoch": epoch
+                    }
+                    with open(os.path.join(self.args.output_dir, "results.json"), "w") as f:
+                        json.dump(results, f, indent=4)
             else:
                 print(f"Epoch {epoch}: Loss={avg_loss:.4f}")
 
@@ -759,6 +745,7 @@ class FPaCoTrainer:
     def validate(self, loader):
         self.model_q.eval()
         preds, targets = [], []
+        probs = []
         for batch in loader:
             v1 = batch['v1'].to(self.device).float()
             labels = batch['label'].to(self.device)
@@ -767,36 +754,53 @@ class FPaCoTrainer:
             feat_cat = torch.cat([feat, feat], dim=1)
             logits = self.classifier(feat_cat)
             
+            # For AUC we need probabilities
+            prob = F.softmax(logits, dim=1)
+            
             pred = torch.argmax(logits, dim=1)
             preds.extend(pred.cpu().numpy())
             targets.extend(labels.cpu().numpy())
+            probs.extend(prob.cpu().numpy())
             
-        return accuracy_score(targets, preds), f1_score(targets, preds, average='macro')
+        acc = accuracy_score(targets, preds)
+        f1 = f1_score(targets, preds, average='macro')
+        
+        # Calculate AUC (One-vs-Rest)
+        try:
+            # Check if we have enough classes/samples for AUC
+            if self.num_classes > 1:
+                auc_score = roc_auc_score(targets, probs, multi_class='ovr', average='macro')
+            else:
+                auc_score = 0.0
+        except Exception as e:
+            print(f"Warning: AUC Calculation failed: {e}")
+            auc_score = 0.0
+            
+        return acc, f1, auc_score
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=str, required=True)
     parser.add_argument('--output-dir', type=str, default='results')
-    parser.add_argument('--epochs', type=int, default=50)
-    parser.add_argument('--batch-size', type=int, default=32)
-    parser.add_argument('--lr', type=float, default=0.005)
+    parser.add_argument('--epochs', type=int, default=100)
+    parser.add_argument('--batch-size', type=int, default=16)
+    parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--backbone', type=str, default='resnet18')
-    parser.add_argument('--image-size', type=int, default=224)
-    parser.add_argument('--sigma', type=int, default=30)
-    parser.add_argument('--beta', type=float, default=2.0)
-    parser.add_argument('--tau', type=float, default=1.0)
+    parser.add_argument('--image-size', type=int, default=448)
+    parser.add_argument('--sigma', type=int, default=20)
+    parser.add_argument('--beta', type=float, default=2.5)
+    parser.add_argument('--tau', type=float, default=0.5)
     parser.add_argument('--focal-gamma', type=float, default=2.0, help="Gamma for Focal Loss. If > 0, replaces Logit Compensation CE.")
-    parser.add_argument('--temperature', type=float, default=0.1)
+    parser.add_argument('--temperature', type=float, default=0.05)
     parser.add_argument('--queue-size', type=int, default=8192)
     parser.add_argument('--val-interval', type=int, default=1)
+    parser.add_argument('--max-alpha', type=float, default=0.5, help="Max teacher attention trust alpha")
     parser.add_argument('--combine-train-val', action='store_true', default=True)
     parser.add_argument('--no-heatmap', action='store_true', help="Disable heatmap channel (use RGB only)")
-
-    # Ablation / Tuning Args
-    parser.add_argument('--lambda-guide', type=float, default=0.5, help="Weight for Attention Alignment Loss")
-    parser.add_argument('--lambda-fg', type=float, default=1.0, help="Weight for Disentanglement Foreground Loss")
-    parser.add_argument('--lambda-bg', type=float, default=0.1, help="Weight for Disentanglement Background Loss")
-    parser.add_argument('--max-alpha', type=float, default=0.8, help="Max teacher trust alpha for Attention Alignment")
+    parser.add_argument('--no-adaptive-alpha', action='store_true', help="Disable confidence-adaptive alpha (use static schedule)")
+    parser.add_argument('--warmup-epochs', type=int, default=10, help="Number of warmup epochs where heatmap guidance is disabled")
+    parser.add_argument('--align-loss-type', type=str, default='relu', choices=['relu', 'mse'], help="Type of alignment loss: 'relu' (Asymmetric) or 'mse' (Symmetric)")
+    parser.add_argument('--guide-weight', type=float, default=0.1, help="Weight for the alignment/guide loss")
     
     args = parser.parse_args()
     os.makedirs(args.output_dir, exist_ok=True)
