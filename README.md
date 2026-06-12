@@ -83,6 +83,42 @@ cd fpaco_noheat
 bash run_fpaco_noheat.sh
 ```
 
+### 10. FPaCo
+Run the full FPaCo experiments:
+```bash
+cd fpaco
+bash run_fpaco.sh
+```
+
+This script runs experiments on APTOS, fingerA, fingerB, fingerC, MIAS, and OCTA.
+Results are saved by default to:
+```bash
+fpaco/results/best_runs
+```
+
+To specify a GPU, set `CUDA_VISIBLE_DEVICES` before running the script:
+```bash
+CUDA_VISIBLE_DEVICES=0 bash run_fpaco.sh
+```
+
+### 11. FPaCo Ablation
+Run the FPaCo ablation experiments:
+```bash
+cd fpaco
+bash run_fpaco_ablation.sh
+```
+
+This script runs the following ablation variants on APTOS, fingerA, MIAS, and OCTA:
+- `1_naive_vlm`
+- `2_mse_distill_adaptive`
+- `3_static_guide`
+- `4_full_adaptive`
+
+Results are saved by default to:
+```bash
+fpaco/results/ablation
+```
+
 ---
 
 ## 🔧 提示词与数据集 (Prompts & Data)
