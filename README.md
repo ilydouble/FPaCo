@@ -1,33 +1,33 @@
 # FPaCo Project Codebase
 
-本项目包含了 FPaCo 论文相关的实验代码，涵盖了多种基于视觉-语言模型（VLM）的适配方法、长尾分布学习方法以及多模态融合算法。
+This repository contains the experimental code for FPaCo and related baselines. It includes vision-language model adaptation methods, long-tailed supervised learning baselines, multimodal classification methods, and the proposed FPaCo training pipeline.
 
-## 📂 目录结构与方法介绍
+## Repository Structure and Methods
 
-### 1. 视觉-语言模型适配 (VLM Adaptation)
-利用预训练的 BioMedCLIP 模型进行零样本推理或微调适配。
+### 1. Vision-Language Model Adaptation
+These methods use pretrained BioMedCLIP-style vision-language models for zero-shot inference or lightweight adaptation.
 
-- **`biomedclip/`**: **Zero-Shot Baseline (零样本基准)**
+- **`biomedclip/`**: **Zero-Shot Baseline**
 - **`tipadapter/`**: **Tip-Adapter (Training-free Adaptation)**
 - **`coop/`**: **CoOp (Context Optimization)**
-- **`tda/`**: **Test-Time Adaptation (测试时适配)**
-- **`dpe/`**: **Decomposed Prompt Ensemble (分解提示词集成)**
+- **`tda/`**: **Test-Time Adaptation**
+- **`dpe/`**: **Decomposed Prompt Ensemble**
 
-### 2. 长尾分布与监督学习基准 (Long-Tail & Supervised Baselines)
+### 2. Long-Tailed and Supervised Baselines
 - **`paco/`**: **PaCo (Parametric Contrastive Learning)**
 - **`gpaco/`**: **GPaCo (Generalized PaCo)**
 - **`bpaco_original/`**: **B-PaCo (Balanced PaCo)**
 - **`ce_loss/`**: **Cross Entropy Baseline**
 - **`focal_loss/`**: **Focal Loss Baseline**
 
-### 3. 多模态与高级方法 (Multimodal & Advanced)
-- **`multimodal_classification/`**: **Multimodal B-PaCo (多模态 B-PaCo)**
+### 3. Multimodal and Advanced Methods
+- **`multimodal_classification/`**: **Multimodal B-PaCo**
 
 ---
 
-## 🚀 实验运行方法 (Run Experiments)
+## Run Experiments
 
-请进入对应的方法文件夹，执行相应的 bash 脚本即可开始实验。
+Enter the directory for the method you want to run, then execute the corresponding bash script.
 
 ### 1. BioMedCLIP Zero-Shot
 ```bash
@@ -84,13 +84,92 @@ bash run_fpaco_noheat.sh
 ```
 
 ### 10. FPaCo
-Run the full FPaCo experiments:
+FPaCo uses RGB images plus a detection-guided heatmap channel. Before training, each image should have an optional same-name `.json` file containing detection boxes used to build the heatmap.
+
+#### Reproduction Input Package
+
+The processed datasets and trained FPaCo checkpoints/results required for reproducing the experiments are provided as a single input package:
+
+[Download the FPaCo input package](https://drive.google.com/file/d/1Jkg9v61xhfo8Y6EKzCScRsqXmd_T0svQ/view?usp=sharing)
+
+After downloading and extracting the package, place the extracted contents under the repository root so that the dataset folders are available under `datasets/` and the provided FPaCo checkpoints/results are available under `fpaco/results/`.
+
+The package already contains the processed datasets and same-name `.json` detection files used to generate the FPaCo heatmap inputs. Therefore, if you use this package, you can skip the optional `.json` generation step below and run the training or evaluation scripts directly.
+
+Expected dataset structure:
+```text
+datasets/<dataset_name>/
+  train/
+    class_0/
+      image_001.png
+      image_001.json
+    class_1/
+      image_002.png
+      image_002.json
+  val/
+    class_0/
+    class_1/
+  test/
+    class_0/
+    class_1/
+```
+
+Each `.json` file should contain a `detections` list with bounding boxes in absolute pixel coordinates:
+```json
+{
+  "image_path": "datasets/<dataset_name>/train/class_0/image_001.png",
+  "prompt": "medical visual targets to locate",
+  "detections": [
+    {
+      "bbox": [x1, y1, x2, y2],
+      "label": "lesion",
+      "class_name": "lesion",
+      "confidence": 0.95
+    }
+  ]
+}
+```
+
+If a same-name `.json` file is missing, training still runs, but the heatmap for that image will be all zeros.
+
+#### Optional: Regenerate Detection `.json` Files
+
+This step is optional. The following commands are only needed if you want to regenerate the `.json` files yourself, replace the provided detections, or apply FPaCo to a new dataset.
+
+Gemini/Yunwu-based generation uses a remote vision-language API. It requires `YUNWU_API_KEY` and sends images to the API for detection:
+```bash
+cd fpaco
+export YUNWU_API_KEY=<your_api_key>
+python generate_gemini_heatmaps.py --dataset ../datasets/octa_classification_dataset --model gemini-3-flash-preview --overwrite
+```
+
+Florence-2 based generation runs a local/offline vision-language model. It does not require the Yunwu API key, but it requires the Florence-2 model dependencies and enough local compute:
+```bash
+cd fpaco
+python generate_offline_detections.py --dataset ../datasets/fingerA --overwrite
+```
+
+The helper script `run_gen_heatmaps.sh` can be used for batch generation when regenerating detections, but check the script first because some dataset commands may be commented out:
+```bash
+bash run_gen_heatmaps.sh
+```
+
+After the `.json` files are prepared, run the full FPaCo experiments:
 ```bash
 cd fpaco
 bash run_fpaco.sh
 ```
 
-This script runs experiments on APTOS, fingerA, fingerB, fingerC, MIAS, and OCTA.
+The training script reads images and same-name `.json` files from:
+```bash
+datasets/aptos_classification_dataset
+datasets/fingerA
+datasets/fingerB
+datasets/fingerC
+datasets/mias_classification_dataset
+datasets/octa_classification_dataset
+```
+
 Results are saved by default to:
 ```bash
 fpaco/results/best_runs
@@ -102,7 +181,7 @@ CUDA_VISIBLE_DEVICES=0 bash run_fpaco.sh
 ```
 
 ### 11. FPaCo Ablation
-Run the FPaCo ablation experiments:
+Run the FPaCo ablation experiments after preparing the same-name `.json` detection files:
 ```bash
 cd fpaco
 bash run_fpaco_ablation.sh
@@ -121,12 +200,12 @@ fpaco/results/ablation
 
 ---
 
-## 🔧 提示词与数据集 (Prompts & Data)
+## Prompts and Data
 
-- **`prompts/unified_prompts.json`**: 包含所有数据集的统一、高质量提示词（CuPL Style）。
-- **`datasets/`**: 存放数据集文件。
+- **`prompts/unified_prompts.json`**: Contains unified high-quality prompts for all datasets, following a CuPL-style prompt design.
+- **`datasets/`**: Stores the processed dataset folders used by the experiments.
 
-请确保环境已安装必要的依赖库，并且数据集路径配置正确（默认为 `../datasets`）。
+Make sure the required dependencies are installed and the dataset paths are configured correctly. The default dataset location used by most scripts is `../datasets` relative to each method directory.
 
 ---
 
