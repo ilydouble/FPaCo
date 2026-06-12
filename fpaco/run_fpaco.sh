@@ -1,168 +1,138 @@
 #!/bin/bash
 
-# Directories
+set -e
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 WORKSPACE="$(dirname "$SCRIPT_DIR")"
-RESULTS_ROOT="$WORKSPACE/fpaco/results"
+RESULTS_ROOT="$SCRIPT_DIR/results/best_runs"
+
 mkdir -p "$RESULTS_ROOT"
 
-# GPU
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0}
 
-# Hyperparams
-EPOCHS=100
-LR=0.001
-BATCH_SIZE=32
-IMAGE_SIZE=512
-BACKBONE="resnet18"
-BETA=2.0
-TAU=0.0
-SIGMA=50
-QUEUE_SIZE=8192
-FOCAL_GAMMA=2.0
-# Optional: Set to "--combine-train-val" to merge datasets for final training
-#COMBINE_FLAG="" 
-COMBINE_FLAG="--combine-train-val"
+TRAIN_SCRIPT="$SCRIPT_DIR/train_fpaco.py"
 
 echo "=========================================================="
-echo "Starting FPaCo Advanced (Attention Alignment + Disentanglement) Experiments"
+echo "Starting FPaCo best experiments"
+echo "Train script: $TRAIN_SCRIPT"
+echo "Results root: $RESULTS_ROOT"
+echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
 echo "=========================================================="
 
-# # 1. MIAS
-# echo "[1/5] Training on MIAS..."
-# python train_fpaco.py \
-#     --dataset "$WORKSPACE/datasets/mias_classification_dataset" \
-#     --output-dir "$RESULTS_ROOT/mias" \
-#     --epochs $EPOCHS \
-#     --lr $LR \
-#     --batch-size $BATCH_SIZE \
-#     --image-size $IMAGE_SIZE \
-#     --backbone $BACKBONE \
-#     --beta $BETA \
-#     --tau $TAU \
-#     --sigma $SIGMA \
-#     --queue-size $QUEUE_SIZE \
-#     --focal-gamma $FOCAL_GAMMA \
-#     --lambda-fg 0.1 \
-#     --lambda-bg 0.0 \
-#     --max-alpha 0.95 \
-#     $COMBINE_FLAG
-
-# # 2. OralCancer
-# echo "[2/5] Training on OralCancer..."
-# python train_fpaco.py \
-#     --dataset "$WORKSPACE/datasets/oral_cancer_classification_dataset" \
-#     --output-dir "$RESULTS_ROOT/oral_cancer" \
-#     --epochs $EPOCHS \
-#     --lr $LR \
-#     --batch-size $BATCH_SIZE \
-#     --image-size $IMAGE_SIZE \
-#     --backbone $BACKBONE \
-#     --beta $BETA \
-#     --tau $TAU \
-#     --sigma $SIGMA \
-#     --queue-size $QUEUE_SIZE \
-#     $COMBINE_FLAG
-
-#3. APTOS
-echo "[3/5] Training on APTOS..."
-python train_fpaco.py \
+echo "[1/6] Training on APTOS..."
+python "$TRAIN_SCRIPT" \
     --dataset "$WORKSPACE/datasets/aptos_classification_dataset" \
-    --output-dir "$RESULTS_ROOT/aptos" \
-    --epochs $EPOCHS \
-    --lr $LR \
-    --batch-size $BATCH_SIZE \
-    --image-size $IMAGE_SIZE \
-    --backbone $BACKBONE \
-    --beta $BETA \
-    --tau $TAU \
-    --sigma $SIGMA \
-    --queue-size $QUEUE_SIZE \
-    --focal-gamma $FOCAL_GAMMA \
-    --lambda-fg 0.1 \
-    --lambda-bg 0.0 \
-    --max-alpha 0.95 \
-    $COMBINE_FLAG
+    --output-dir "$RESULTS_ROOT/APTOS" \
+    --epochs 100 \
+    --batch-size 16 \
+    --lr 0.001 \
+    --backbone resnet18 \
+    --image-size 448 \
+    --sigma 15 \
+    --beta 2.5 \
+    --tau 0.5 \
+    --focal-gamma 2.0 \
+    --temperature 0.1 \
+    --queue-size 8192 \
+    --val-interval 1 \
+    --max-alpha 0.5 \
+    --warmup-epochs 10
 
-4. Fingerprint A
-echo "[4/5] Training on Fingerprint A..."
-python train_fpaco.py \
+echo "[2/6] Training on fingerA..."
+python "$TRAIN_SCRIPT" \
     --dataset "$WORKSPACE/datasets/fingerA" \
     --output-dir "$RESULTS_ROOT/fingerA" \
-    --epochs $EPOCHS \
-    --lr $LR \
-    --batch-size $BATCH_SIZE \
-    --image-size $IMAGE_SIZE \
-    --backbone $BACKBONE \
-    --beta $BETA \
-    --tau $TAU \
-    --sigma 20 \
-    --queue-size $QUEUE_SIZE \
-    --focal-gamma $FOCAL_GAMMA \
-    --lambda-fg 2.0 \
-    --lambda-bg 0.05 \
+    --epochs 100 \
+    --batch-size 16 \
+    --lr 0.001 \
+    --backbone resnet18 \
+    --image-size 448 \
+    --sigma 15 \
+    --beta 2.5 \
+    --tau 0.5 \
+    --focal-gamma 2.0 \
+    --temperature 0.1 \
+    --queue-size 8192 \
+    --val-interval 1 \
     --max-alpha 0.5 \
-    $COMBINE_FLAG
+    --warmup-epochs 10
 
-# 4. Fingerprint B
-echo "[4/5] Training on Fingerprint B..."
-python train_fpaco.py \
+echo "[3/6] Training on fingerB..."
+python "$TRAIN_SCRIPT" \
     --dataset "$WORKSPACE/datasets/fingerB" \
     --output-dir "$RESULTS_ROOT/fingerB" \
-    --epochs $EPOCHS \
-    --lr $LR \
-    --batch-size $BATCH_SIZE \
-    --image-size $IMAGE_SIZE \
-    --backbone $BACKBONE \
-    --beta $BETA \
-    --tau $TAU \
-    --sigma 20\
-    --queue-size $QUEUE_SIZE \
-    --focal-gamma $FOCAL_GAMMA \
-    --lambda-fg 2.0 \
-    --lambda-bg 0.05 \
+    --epochs 100 \
+    --batch-size 16 \
+    --lr 0.001 \
+    --backbone resnet18 \
+    --image-size 448 \
+    --sigma 15 \
+    --beta 2.5 \
+    --tau 0.5 \
+    --focal-gamma 2.0 \
+    --temperature 0.1 \
+    --queue-size 8192 \
+    --val-interval 1 \
     --max-alpha 0.5 \
-    $COMBINE_FLAG
+    --warmup-epochs 10
 
-# 4. Fingerprint C
-echo "[4/5] Training on Fingerprint C..."
-python train_fpaco.py \
+echo "[4/6] Training on fingerC..."
+python "$TRAIN_SCRIPT" \
     --dataset "$WORKSPACE/datasets/fingerC" \
     --output-dir "$RESULTS_ROOT/fingerC" \
-    --epochs $EPOCHS \
-    --lr $LR \
-    --batch-size $BATCH_SIZE \
-    --image-size $IMAGE_SIZE \
-    --backbone $BACKBONE \
-    --beta $BETA \
-    --tau $TAU \
-    --sigma 20 \
-    --queue-size $QUEUE_SIZE \
-    --focal-gamma $FOCAL_GAMMA \
-    --lambda-fg 2.0 \
-    --lambda-bg 0.05 \
-    --max-alpha 0.5 \
-    $COMBINE_FLAG
-
-5. OCTA
-echo "[5/5] Training on OCTA..."
-python train_fpaco.py \
-    --dataset "$WORKSPACE/datasets/octa_classification_dataset" \
-    --output-dir "$RESULTS_ROOT/octa" \
-    --epochs $EPOCHS \
-    --lr $LR \
+    --epochs 100 \
     --batch-size 16 \
-    --image-size $IMAGE_SIZE \
-    --backbone $BACKBONE \
-    --beta $BETA \
-    --tau $TAU \
-    --sigma $SIGMA \
-    --queue-size $QUEUE_SIZE \
-    --focal-gamma $FOCAL_GAMMA \
-    --lambda-fg 0.5 \
-    --lambda-bg 0.0 \
+    --lr 0.001 \
+    --backbone resnet18 \
+    --image-size 448 \
+    --sigma 15 \
+    --beta 2.5 \
+    --tau 0.5 \
+    --focal-gamma 2.0 \
+    --temperature 0.1 \
+    --queue-size 8192 \
+    --val-interval 1 \
     --max-alpha 0.5 \
-    $COMBINE_FLAG
+    --warmup-epochs 10
+
+echo "[5/6] Training on MIAS..."
+python "$TRAIN_SCRIPT" \
+    --dataset "$WORKSPACE/datasets/mias_classification_dataset" \
+    --output-dir "$RESULTS_ROOT/MIAS" \
+    --epochs 100 \
+    --batch-size 16 \
+    --lr 0.005 \
+    --backbone resnet18 \
+    --image-size 224 \
+    --sigma 30 \
+    --beta 2.0 \
+    --tau 2.0 \
+    --focal-gamma 1.5 \
+    --temperature 0.1 \
+    --queue-size 8192 \
+    --val-interval 1 \
+    --max-alpha 0.8 \
+    --warmup-epochs 20
+
+echo "[6/6] Training on OCTA..."
+python "$TRAIN_SCRIPT" \
+    --dataset "$WORKSPACE/datasets/octa_classification_dataset" \
+    --output-dir "$RESULTS_ROOT/OCTA" \
+    --epochs 100 \
+    --batch-size 16 \
+    --lr 0.005 \
+    --backbone resnet18 \
+    --image-size 224 \
+    --sigma 30 \
+    --beta 2.0 \
+    --tau 1.0 \
+    --focal-gamma 2.5 \
+    --temperature 0.1 \
+    --queue-size 8192 \
+    --val-interval 1 \
+    --max-alpha 0.8 \
+    --warmup-epochs 0
 
 echo "=========================================================="
-echo "All FPaCo Advanced experiments completed."
+echo "All FPaCo best experiments completed."
+echo "=========================================================="
